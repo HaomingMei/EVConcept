@@ -1,0 +1,5 @@
+../Core/Src/main.c:83:6:HAL_CAN_RxFifo0MsgPendingCallback	16	static
+../Core/Src/main.c:95:6:update_car_state	32	static
+../Core/Src/main.c:248:6:SystemClock_Config	80	static,ignoring_inline_asm
+../Core/Src/main.c:168:5:main	104	static,ignoring_inline_asm
+../Core/Src/main.c:430:6:Error_Handler	0	static,ignoring_inline_asm
