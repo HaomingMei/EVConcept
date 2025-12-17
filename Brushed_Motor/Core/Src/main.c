@@ -36,7 +36,7 @@
 #define ACC_ID 3
 #define TRANS_DEBOUNCE_LOOPS 50
 
-#define MAIN_CODE // Define if running the actual program, comment out the rest
+//#define MAIN_CODE // Define if running the actual program, comment out the rest
 
 // Below are functions created for unit testing
 	// Uncomment them as necessary
@@ -184,31 +184,31 @@ void PWM_UNIT_TEST(){ 	// Use Debug Mode and make sure the PWM looks right, then
 	HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
 
 	//** Going from Speed = 0 to 25 BEGIN **
-	for(int speedtest = 0; speedtest <26; i ++){
+	for(int speedtest = 0; speedtest <26; speedtest++){
 
 		TIM16->CCR1 = (uint32_t)(((uint32_t)speedtest * TIM16->ARR * 8) / (25 * 10));
 	}
 	// Skipping by 2
-	for(int speedtest = 0; speedtest <26; i++){
+	for(int speedtest = 0; speedtest <26; speedtest++){
 
 		TIM16->CCR1 = (uint32_t)(((uint32_t)speedtest * TIM16->ARR * 8) / (25 * 10));
-		i+=1;
+		speedtest+=1;
 	}
 	// Skipping by 5
-	for(int speedtest = 0; speedtest <26; i++){
+	for(int speedtest = 0; speedtest <26; speedtest++){
 		TIM16->CCR1 = (uint32_t)(((uint32_t)speedtest * TIM16->ARR * 8) / (25 * 10));
-		i+=4;
+		speedtest+=4;
 	}
 
 	// Skipping by 10
-	for(int speedtest = 0; speedtest <26; i++){
+	for(int speedtest = 0; speedtest <26; speedtest++){
 		TIM16->CCR1 = (uint32_t)(((uint32_t)speedtest * TIM16->ARR * 8) / (25 * 10));
-		i+=9;
+		speedtest+=9;
 	}
 	// Speed 0 Spike to Speed 25
-	for(int speedtest = 0; speedtest <26; i++){
+	for(int speedtest = 0; speedtest <26; speedtest++){
 		TIM16->CCR1 = (uint32_t)(((uint32_t)speedtest * TIM16->ARR * 8) / (25 * 10));
-		i+=24;
+		speedtest+=24;
 	}
 
 	//** END**
@@ -256,12 +256,14 @@ int main(void)
   MX_CAN_Init();
   MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
+	#ifdef MAIN_CODE
   updateFlag = 0;
   REST_DRIVE_COUNT = 0;
   DRIVE_DECAY_COUNT = 0;
   DECAY_DRIVE_COUNT = 0;
   DECAY_REST_COUNT = 0;
   current_state = REST ;
+	#endif
 
   HAL_CAN_Start(&hcan);
   HAL_CAN_ActivateNotification(&hcan, CAN_ACTIVATE_NOTIF_TIMEOUT);
