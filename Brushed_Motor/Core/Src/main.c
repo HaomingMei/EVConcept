@@ -35,6 +35,13 @@
 #define DASHBOARD_CANID 0x0012
 #define ACC_ID 3
 #define TRANS_DEBOUNCE_LOOPS 50
+
+#define MAIN_CODE // Define if running the actual program, comment out the rest
+
+// Below are functions created for unit testing
+	// Uncomment them as necessary
+
+#define UNIT_PWM_TEST
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -72,7 +79,7 @@ static void MX_TIM16_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+#ifdef MAIN_CODE
 typedef enum{
 	REST,
 	DRIVE,
@@ -168,6 +175,53 @@ void update_car_state(){
 			break;
 	}
 }
+#endif
+#ifdef UNIT_PWM_TEST
+// This function tests the PMW output for Speed 0 to 25, which corresponds to 0 to 100% Duty Cycle
+void PWM_UNIT_TEST(){ 	// Use Debug Mode and make sure the PWM looks right, then right it in real time
+//	int counter = 0 ;
+	// Ensures that the PWM hardware is on
+	HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+
+	//** Going from Speed = 0 to 25 BEGIN **
+	for(int speedtest = 0; speedtest <26; i ++){
+
+		TIM16->CCR1 = (uint32_t)(((uint32_t)speedtest * TIM16->ARR * 8) / (25 * 10));
+	}
+	// Skipping by 2
+	for(int speedtest = 0; speedtest <26; i++){
+
+		TIM16->CCR1 = (uint32_t)(((uint32_t)speedtest * TIM16->ARR * 8) / (25 * 10));
+		i+=1;
+	}
+	// Skipping by 5
+	for(int speedtest = 0; speedtest <26; i++){
+		TIM16->CCR1 = (uint32_t)(((uint32_t)speedtest * TIM16->ARR * 8) / (25 * 10));
+		i+=4;
+	}
+
+	// Skipping by 10
+	for(int speedtest = 0; speedtest <26; i++){
+		TIM16->CCR1 = (uint32_t)(((uint32_t)speedtest * TIM16->ARR * 8) / (25 * 10));
+		i+=9;
+	}
+	// Speed 0 Spike to Speed 25
+	for(int speedtest = 0; speedtest <26; i++){
+		TIM16->CCR1 = (uint32_t)(((uint32_t)speedtest * TIM16->ARR * 8) / (25 * 10));
+		i+=24;
+	}
+
+	//** END**
+
+	// Going from Speed = 25 to 0
+
+
+
+}
+
+
+#endif
+
 /* USER CODE END 0 */
 
 /**
@@ -211,6 +265,9 @@ int main(void)
 
   HAL_CAN_Start(&hcan);
   HAL_CAN_ActivateNotification(&hcan, CAN_ACTIVATE_NOTIF_TIMEOUT);
+  // Activate the PWM Hardware Here
+
+  HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
 
   tick = HAL_GetTick();
   /* USER CODE END 2 */
@@ -223,6 +280,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+	#ifdef MAIN_CODE
 	uint32_t PRIMASK_STATE =  __get_PRIMASK();// Store the Current State of the Interrupts in (PRIMASK)
 //	// Note: CPSID i sets PRIMASK to 1 (disable) and CPSIE i clears PRIMASK to 0 (enables)
 	__disable_irq(); // This is an Critical Section because we want to Update the Relay  without disruption
@@ -233,6 +291,7 @@ int main(void)
 
 	__set_PRIMASK(PRIMASK_STATE);
 //	__enable_irq();
+	#endif
 
   }
   /* USER CODE END 3 */
