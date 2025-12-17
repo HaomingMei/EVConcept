@@ -234,22 +234,6 @@ int main(void)
 	__set_PRIMASK(PRIMASK_STATE);
 //	__enable_irq();
 
-//	// Edge Case: Both Relays are Off, we go to updateFlag == 1 condition, toggled the first one on but not the second
-//	// This will Blow the Motor
-//	  if(updateFlag == 1){
-//		  update_car_state();
-//		  // Ensure that the Relays are On to Drive the Motor
-//
-//		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET); // Toggle Relay connecting Motor + Terminal to Switching N Mosfet
-//		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET); // Toggle Relay 48V to Motor - Terminal Relay on
-//
-//		  // Duty Cycle is CCR / ARR
-//		  // We Set CCR according to the speed, where speed ranges from 0-25
-//		  TIM16->CCR1 = (0.04)*speed*(TIM16->ARR) * 0.8;  // 80% of the max for testing
-//	  }
-//	  else{
-//		  // Diables the Relay under some condition
-//	  }
   }
   /* USER CODE END 3 */
 }
