@@ -53,6 +53,9 @@ typedef union{
 // 0-40, 40 exclusive are the pixels for the Turn/Hazard (Yellow) Signals
 #define RIGHT_DMABUF_LEN (RIGHT_NUMPIXEL * 24) + 100 // 100 Bits Corresponds to 100*0.96us of Lows
 
+
+#define DASHLIGHT_ID 5
+#define BRAKEBOARD_ID 2
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -68,7 +71,8 @@ DMA_HandleTypeDef hdma_tim3_ch1_trig;
 DMA_HandleTypeDef hdma_tim3_ch4_up;
 
 /* USER CODE BEGIN PV */
-
+CAN_RxHeaderTypeDef RxHeader;
+uint8_t RxData[8];
 
 /* USER CODE END PV */
 
@@ -92,10 +96,21 @@ PixelRGB_t Right_PixelData[RIGHT_NUMPIXEL];
 uint8_t left_dma_Buffer[LEFT_DMABUF_LEN];
 uint8_t right_dma_Buffer[RIGHT_DMABUF_LEN];
 
-
+uint8_t blinkData;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 	// Extract the LED status update bits
-//	if
+	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
+
+	if(RxHeader.StdId == DASHLIGHT_ID){
+		// Dashboard only controls the blinking of the lights
+		// Hazard or Left or Right
+		blinkData = RxData[0];
+	}
+	else if(RxHeader.StdId = BRAKEBOARD_ID){
+		// Brakeboard only controls the Red portion of the lights
+		// Bright Red / Dim Red
+		brakeData = RxData[0];
+	}
 }
 
 
@@ -237,7 +252,7 @@ static void MX_CAN_Init(void)
   canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
   canfilterconfig.FilterBank = 0;
   canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-  canfilterconfig.FilterIdHigh = DASHBOARD_ID << 5; // CAN frame ID is 11 bit, but it's fetched as a 16 bit
+  canfilterconfig.FilterIdHigh = DASHLIGHT_ID << 5; // CAN frame ID is 11 bit, but it's fetched as a 16 bit
   	  	  	  	  	  	  	  	  	  	  	  	  	// Actual CAN id is the fetched one right shifted by 5
   	  	  	  	  	  	  	  	  	  	  	  	  	// However, to accept it, we might create a filter that
   	  	  	  	  	  	  	  	  	  	  	  	  	// Matches the ID and shifts it left by 5 bits
@@ -247,7 +262,7 @@ static void MX_CAN_Init(void)
   canfilterconfig.FilterMode = CAN_FILTERMODE_IDLIST;
   canfilterconfig.FilterScale = CAN_FILTERSCALE_16BIT;
   canfilterconfig.SlaveStartFilterBank = 0;
-
+  // Sets up the Filter Hardware
   HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
   /* USER CODE END CAN_Init 2 */
 
