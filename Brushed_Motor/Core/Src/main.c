@@ -221,7 +221,7 @@ void PWM_UNIT_TEST(){ 	// Use Debug Mode and make sure the PWM looks right, then
 	// ** Possible Implementation Update Speed once say 250ms (loop updates at least once every 250ms)
 		// If speed difference is >=5 update by steps of 5 only to minimizing spikes
 		// If speed difference is <5 update by the difference
-	//TODO Verify if Steps of 5 Can be Handle through LOAD + Capacitor + Heat Tolerance
+	//TODO Verify if Steps of 5 Can be Handle through LOAD + Capacitor + Heat Tolerance + Motor Resistance
 
 
 
