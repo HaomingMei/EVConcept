@@ -113,6 +113,31 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 	}
 }
 
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
+
+// PICK ONE: Found out which one it is (most likely DMA one)
+  // Maybe check HAL_TIM_ChannelStateTypeDef to see which one finished?
+  if(htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
+	  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+  }
+  if(htim->ChannelState[3] == HAL_TIM_CHANNEL_STATE_READY){
+ 	  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_4);
+   }
+
+  // Either the above or check DMA1 channel 6 -> TIM channel 1
+  // DMA1 channel 3 -> TIM channel 4
+  if(htim->hdma[5]->State ==  HAL_DMA_STATE_READY){
+	  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+  }
+  if(htim->hdma[2]->State == HAL_DMA_STATE_READY){
+	  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_4);
+
+  }
+  datasentflag = 1;
+
+
+}
+
 
 /* USER CODE END 0 */
 
