@@ -89,8 +89,14 @@ int right_updateFlag;
 PixelRGB_t Left_PixelData[LEFT_NUMPIXEL];
 PixelRGB_t Right_PixelData[RIGHT_NUMPIXEL];
 // DMA Transfers Requires Pointer. We will create that locally later
-uint8_t Left_dma_Buffer[LEFT_DMABUF_LEN];
+uint8_t left_dma_Buffer[LEFT_DMABUF_LEN];
 uint8_t right_dma_Buffer[RIGHT_DMABUF_LEN];
+
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
+	// Extract the LED status update bits
+//	if
+}
 
 
 /* USER CODE END 0 */
@@ -147,6 +153,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  if(left_updateFlag == 1){
+
+	  }
+	  if(right_updateFlag == 1){
+
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -221,7 +233,22 @@ static void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
+  CAN_FilterTypeDef canfilterconfig;
+  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+  canfilterconfig.FilterBank = 0;
+  canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+  canfilterconfig.FilterIdHigh = DASHBOARD_ID << 5; // CAN frame ID is 11 bit, but it's fetched as a 16 bit
+  	  	  	  	  	  	  	  	  	  	  	  	  	// Actual CAN id is the fetched one right shifted by 5
+  	  	  	  	  	  	  	  	  	  	  	  	  	// However, to accept it, we might create a filter that
+  	  	  	  	  	  	  	  	  	  	  	  	  	// Matches the ID and shifts it left by 5 bits
+  canfilterconfig.FilterIdLow = BRAKEBOARD_ID << 5;
+  canfilterconfig.FilterMaskIdHigh = 0xFFFF;
+  canfilterconfig.FilterMaskIdLow = 0xFFFF;
+  canfilterconfig.FilterMode = CAN_FILTERMODE_IDLIST;
+  canfilterconfig.FilterScale = CAN_FILTERSCALE_16BIT;
+  canfilterconfig.SlaveStartFilterBank = 0;
 
+  HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
   /* USER CODE END CAN_Init 2 */
 
 }
