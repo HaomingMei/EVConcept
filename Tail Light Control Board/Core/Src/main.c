@@ -97,6 +97,7 @@ uint8_t left_dma_Buffer[LEFT_DMABUF_LEN];
 uint8_t right_dma_Buffer[RIGHT_DMABUF_LEN];
 
 uint8_t blinkData;
+uint8_t brakeData;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 	// Extract the LED status update bits
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
@@ -106,7 +107,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 		// Hazard or Left or Right
 		blinkData = RxData[0];
 	}
-	else if(RxHeader.StdId = BRAKEBOARD_ID){
+	else if(RxHeader.StdId == BRAKEBOARD_ID){
 		// Brakeboard only controls the Red portion of the lights
 		// Bright Red / Dim Red
 		brakeData = RxData[0];
@@ -115,25 +116,28 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 
-// PICK ONE: Found out which one it is (most likely DMA one)
-  // Maybe check HAL_TIM_ChannelStateTypeDef to see which one finished?
-  if(htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
-	  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
-  }
-  if(htim->ChannelState[3] == HAL_TIM_CHANNEL_STATE_READY){
- 	  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_4);
-   }
+  if( htim == &htim3){
 
-  // Either the above or check DMA1 channel 6 -> TIM channel 1
-  // DMA1 channel 3 -> TIM channel 4
-  if(htim->hdma[5]->State ==  HAL_DMA_STATE_READY){
-	  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
-  }
-  if(htim->hdma[2]->State == HAL_DMA_STATE_READY){
-	  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_4);
+	// PICK ONE: Found out which one it is (most likely DMA one)
+	  // Maybe check HAL_TIM_ChannelStateTypeDef to see which one finished?
+	  if(htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+	  }
+	  if(htim->ChannelState[3] == HAL_TIM_CHANNEL_STATE_READY){
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_4);
+	   }
 
+	  // Either the above or check DMA1 channel 6 -> TIM channel 1
+	  // DMA1 channel 3 -> TIM channel 4
+	  if(htim->hdma[5]->State ==  HAL_DMA_STATE_READY){
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+	  }
+	  if(htim->hdma[2]->State == HAL_DMA_STATE_READY){
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_4);
+
+	  }
+	 // datasentflag = 1;
   }
-  datasentflag = 1;
 
 
 }
