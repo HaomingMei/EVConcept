@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+//#include <limits.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -93,8 +93,8 @@ static void MX_CAN_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 void updateLight();
-void updateDash(uint8_t blinkData);
-void updateBrake(uint8_t brakeData);
+void updateDash();
+void updateBrake();
 void SetPixelColor(PixelRGB_t* p,const uint8_t color[]);
 
 /* USER CODE END PFP */
@@ -104,19 +104,24 @@ void SetPixelColor(PixelRGB_t* p,const uint8_t color[]);
 uint8_t datasentFlag; // datasentFlag = 2 means both DMA are available, 0 means none are available
 uint8_t updateDashFlag;
 uint8_t updatePedalFlag;
-PixelRGB_t Left_PixelData[LEFT_NUMPIXEL];
-PixelRGB_t Right_PixelData[RIGHT_NUMPIXEL];
+PixelRGB_t Left_PixelData[LEFT_NUMPIXEL] = {0};
+PixelRGB_t Right_PixelData[RIGHT_NUMPIXEL] = {0};
 // DMA Transfers Requires Pointer. We will create that locally later
-uint32_t left_dma_Buffer[LEFT_DMABUF_LEN]; // Match DMA Start, if we used uint8_t then we need
-uint32_t right_dma_Buffer[RIGHT_DMABUF_LEN]; // uint32_t*, and modifying this might corrupt the DMA data
-											// contiguous to that address
-
+uint16_t left_dma_Buffer[LEFT_DMABUF_LEN] = {0}; // Match DMA Start, if we used uint8_t then we need
+uint16_t right_dma_Buffer[RIGHT_DMABUF_LEN] = {0}; // uint32_t*, and modifying this might corrupt the DMA data
+											// contiguous to that addres
 uint8_t blinkData;
 uint8_t brakeData;
-uint32_t *pBuff_Left;
-uint32_t *pBuff_Right;
-uint8_t LEFT_BLINK;
-uint8_t RIGHT_BLINK;
+uint16_t * pBuff_Left;
+uint16_t * pBuff_Right;
+uint8_t BLINK_STATE;
+
+int counter;
+void SetPixelColor(PixelRGB_t* p, const uint8_t color[]){
+	(*p).color.r = color [0];
+	(*p).color.g = color [1];
+	(*p).color.b = color [2];
+}
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 	// Extract the LED status update bits
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
@@ -141,26 +146,30 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 	  // Maybe check HAL_TIM_ChannelStateTypeDef to see which one finished?
 	  if(htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+		  datasentFlag +=1;
 	  }
 	  if(htim->ChannelState[3] == HAL_TIM_CHANNEL_STATE_READY){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
+		  datasentFlag += 1;
 	   }
 
 	  // Either the above or check DMA1 channel 6 -> TIM channel 1
 	  // DMA1 channel 3 -> TIM channel 4
 	  if(htim->hdma[5]->State ==  HAL_DMA_STATE_READY){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+		  datasentFlag += 1;
 	  }
 	  if(htim->hdma[2]->State == HAL_DMA_STATE_READY){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
-
+		  datasentFlag += 1;
 	  }
 
   }
 
 
 }
-void updateBrake(uint8_t brakeData){
+void updateBrake(){
+	datasentFlag = 0;
 	if(brakeData & 0b1)
 	{
 	for(int i = 0; i < LEFT_CUTOFF; i++){
@@ -215,25 +224,25 @@ void updateLight(){
 		left_dma_Buffer[LEFT_DMABUF_LEN - z] = 0;
 		right_dma_Buffer[RIGHT_DMABUF_LEN - z ] = 0; // Extra time for latch (50us?)
 	}
-	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, left_dma_Buffer, LEFT_DMABUF_LEN);
-	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, right_dma_Buffer, RIGHT_DMABUF_LEN);
+	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)left_dma_Buffer, LEFT_DMABUF_LEN);
+	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)right_dma_Buffer, RIGHT_DMABUF_LEN);
 }
 // blinkData is headlight, hazard, left, right
-void updateDash(uint8_t blinkData){
+void updateDash(){
 	// TODO Logic to Mask the Blinkdata and Modify Left and Right Pixel Data as Necessary
 	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
 	if ((~blinkData & 0b0010) && (blinkData&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
-			LEFT_BLINK = 0;
-			counter = INT_MAX - 800;
+//			LEFT_BLINK = 0;
+			counter = 0xFFFF - 800;
 	}
 	if((~blinkData & 0b0001) && (blinkData & 0b0010)){ // If Right is off and Left is On, ensure right blink is off
-			RIGHT_BLINK = 0;
-			counter = INT_MAX - 800;
+//			RIGHT_BLINK = 0;
+			counter = 0xFFFF - 800;
 	}
 
 	if(blinkData & 0b0100){ // Hazard Case
-		LEFT_BLINK = 1;
-		RIGHT_BLINK = 1;
+//		LEFT_BLINK = 1;
+//		RIGHT_BLINK = 1;
 		counter = 0;
 
 	}
@@ -282,10 +291,10 @@ int main(void)
   // Prepares the CAN hardware with the existing configuration and start allowing
   // CAN message Transmitting and Receiving
   datasentFlag = 2;
-  updateDashFlag = 0;
-  updatePedalFlag = 0 ;
-  LEFT_BLINK = 0;
-  RIGHT_BLINK = 0;
+//  updateDashFlag = 0;
+//  updatePedalFlag = 0 ;
+//  LEFT_BLINK = 0;
+//  RIGHT_BLINK = 0;
 
   updateBrake(0b0);
   //HAL_Delay(100);
@@ -305,9 +314,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  // Interrupt won't be faster than CPU execution since processing speed is way faster
-	  if(updateDashFlag && datasentflag == 2){
+	  if(updateDashFlag && datasentFlag == 2){
 
-		  updateDash(blinkData);
+		  updateDash();
 		  updateDashFlag = 0 ; // 0 means the latest dash data has been processed
 
 	  }
