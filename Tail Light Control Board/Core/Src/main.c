@@ -56,6 +56,9 @@ typedef union{
 
 #define DASHLIGHT_ID 5
 #define BRAKEBOARD_ID 2
+
+#define NEOPIXEL_ZERO 19 // CCR Needed to Create "LOW" Duty Cycle
+#define NEOPIXEL_ONE 38 // CCR Needed to Create "High" Duty Cycle
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -83,6 +86,10 @@ static void MX_DMA_Init(void);
 static void MX_CAN_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
+void updateLight();
+void updateDash(uint8_t blinkData);
+void updateBrake(uint8_t brakeData);
+void SetPixelColor(PixelRGB_t* p,const uint8_t color[]);
 
 /* USER CODE END PFP */
 
@@ -147,7 +154,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 
 // Assumption Both Buffers are Filled
 // Send there out via DMA
-void updateLight(TIM_HandleTypeDef *htim){
+void updateLight(){
 	pBuff_Left = left_dma_Buffer;
 	pBuff_Right = right_dma_Buffer;
 	for(int i = 0; i< LEFT_NUMPIXEL; i++){
@@ -162,10 +169,9 @@ void updateLight(TIM_HandleTypeDef *htim){
 		}
 
 	}
-
 	for(int k = 0; k< RIGHT_NUMPIXEL; k++){
 		for(int l = 23; l >= 0; l--){
-			if((Right_PixelData[i].data>>j) & 0x01){
+			if((Right_PixelData[k].data>>l) & 0x01){
 				*pBuff_Right = NEOPIXEL_ONE;
 			}
 			else{
@@ -174,13 +180,12 @@ void updateLight(TIM_HandleTypeDef *htim){
 			pBuff_Right++;
 		}
 	}
-
 	for(int z = 1; z <= 100; z++){
 		left_dma_Buffer[LEFT_DMABUF_LEN - z] = 0;
 		right_dma_Buffer[RIGHT_DMABUF_LEN - z ] = 0; // Extra time for latch (50us?)
 	}
-	HAL_TIM_PWM_Start_DMA(htim3, TIM_CHANNEL_1, left_dma_Buffer, LEFT_DMABUF_LEN);
-	HAL_TIM_PWM_Start_DMA(htim3, TIM_CHANNEL_3, right_dma_Buffer, RIGHT_DMABUF_LEN);
+	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, left_dma_Buffer, LEFT_DMABUF_LEN);
+	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, right_dma_Buffer, RIGHT_DMABUF_LEN);
 }
 
 
