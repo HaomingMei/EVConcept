@@ -151,11 +151,33 @@ void updateLight(TIM_HandleTypeDef *htim){
 	pBuff_Left = left_dma_Buffer;
 	pBuff_Right = right_dma_Buffer;
 	for(int i = 0; i< LEFT_NUMPIXEL; i++){
+		for(int j = 23; j >= 0; j--){
+			if((Left_PixelData[i].data>>j) & 0x01){
+				*pBuff_Left = NEOPIXEL_ONE;
+			}
+			else{
+				*pBuff_Left = NEOPIXEL_ZERO;
+			}
+			pBuff_Left++;
+		}
 
 	}
 
-	for(int j =0; i< RIGHT_NUMPIXEL; j++){
+	for(int k = 0; k< RIGHT_NUMPIXEL; k++){
+		for(int l = 23; l >= 0; l--){
+			if((Right_PixelData[i].data>>j) & 0x01){
+				*pBuff_Right = NEOPIXEL_ONE;
+			}
+			else{
+				*pBuff_Right = NEOPIXEL_ZERO;
+			}
+			pBuff_Right++;
+		}
+	}
 
+	for(int z = 1; z <= 100; z++){
+		left_dma_Buffer[LEFT_DMABUF_LEN - z] = 0;
+		right_dma_Buffer[RIGHT_DMABUF_LEN - z ] = 0; // Extra time for latch (50us?)
 	}
 	HAL_TIM_PWM_Start_DMA(htim3, TIM_CHANNEL_1, left_dma_Buffer, LEFT_DMABUF_LEN);
 	HAL_TIM_PWM_Start_DMA(htim3, TIM_CHANNEL_3, right_dma_Buffer, RIGHT_DMABUF_LEN);
