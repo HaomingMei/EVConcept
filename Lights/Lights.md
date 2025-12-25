@@ -12,7 +12,8 @@
     - Difference between TIM3_CH1/TRIG and TIM3_CH4/UP 
         - TIM3_CH1/TRIG: Triggers the DMA stream upon CNT == CCR1 or the trigger event
         - TIM3_CH4/UP: Triggers the DMA stream upon CNT == CCR4 or when CNT overflows
-        - We cannot disable UP, so the two event will not be sync
+            - UP is used for burst mode where you want to update multiple channels at once
+        - We might be able to disable up via TIM3's registers, but the safest option is to use a different channel that does not have UP at all
         - Confusion: Trigger -> Sends 1 element??
             - When CNT == CCR? but the old code never set that so I am confused
         - Fixed: Used a different channel that only has TIM3_CH3 on its own
