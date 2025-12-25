@@ -103,6 +103,8 @@ void SetPixelColor(PixelRGB_t* p,const uint8_t color[]);
 /* USER CODE BEGIN 0 */
 int left_updateFlag;
 int right_updateFlag;
+uint8_t updateDashFlag;
+uint8_t updatePedalFlag;
 PixelRGB_t Left_PixelData[LEFT_NUMPIXEL];
 PixelRGB_t Right_PixelData[RIGHT_NUMPIXEL];
 // DMA Transfers Requires Pointer. We will create that locally later
@@ -152,31 +154,31 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
 
 	  }
-	 // datasentflag = 1;
+
   }
 
 
 }
 void updateBrake(uint8_t brakeData){
 	if(brakeData & 0b1)
-		{
-		for(int i = 0; i < LEFT_CUTOFF; i++){
-			SetPixelColor(&Left_PixelData[i], BRAKE_LIGHT);
-		}
-		for(int j = RIGHT_CUTOFF ; j < RIGHT_NUMPIXEL; j++){
-			SetPixelColor(&Right_PixelData[j], BRAKE_LIGHT);
-		}
-		}
-		else{ // if 0 then default dim red
-			for(int k = 0; k < LEFT_CUTOFF; k++){
-				SetPixelColor(&Left_PixelData[k], TAIL_LIGHT);
-		     }
-			for(int l = RIGHT_CUTOFF; l < RIGHT_NUMPIXEL; l++){
-				SetPixelColor(&Right_PixelData[l], TAIL_LIGHT);
-			 }
+	{
+	for(int i = 0; i < LEFT_CUTOFF; i++){
+		SetPixelColor(&Left_PixelData[i], BRAKE_LIGHT);
+	}
+	for(int j = RIGHT_CUTOFF ; j < RIGHT_NUMPIXEL; j++){
+		SetPixelColor(&Right_PixelData[j], BRAKE_LIGHT);
+	}
+	}
+	else{ // if 0 then default dim red
+		for(int k = 0; k < LEFT_CUTOFF; k++){
+			SetPixelColor(&Left_PixelData[k], TAIL_LIGHT);
+		 }
+		for(int l = RIGHT_CUTOFF; l < RIGHT_NUMPIXEL; l++){
+			SetPixelColor(&Right_PixelData[l], TAIL_LIGHT);
+		 }
 
-		}
-		updateLight();
+	}
+	updateLight();
 }
 // Assumption Both Buffers are Filled
 // Send there out via DMA
@@ -267,6 +269,13 @@ int main(void)
 
   left_updateFlag = 0;
   right_updateFlag = 0;
+  updateDashFlag = 0;
+  updatePedalFlag = 0 ;
+
+
+  updateBrake(0b0);
+  //HAL_Delay(100);
+  updateDash(0b0000);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -276,10 +285,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if(left_updateFlag == 1){
+	  if(updateDashFlag){
+
 
 	  }
-	  if(right_updateFlag == 1){
+	  if(update == 1){
 
 	  }
   }
