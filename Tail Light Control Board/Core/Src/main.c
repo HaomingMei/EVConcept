@@ -101,8 +101,7 @@ void SetPixelColor(PixelRGB_t* p,const uint8_t color[]);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int left_updateFlag;
-int right_updateFlag;
+uint8_t datasentFlag; // datasentFlag = 2 means both DMA are available, 0 means none are available
 uint8_t updateDashFlag;
 uint8_t updatePedalFlag;
 PixelRGB_t Left_PixelData[LEFT_NUMPIXEL];
@@ -116,6 +115,8 @@ uint8_t blinkData;
 uint8_t brakeData;
 uint32_t *pBuff_Left;
 uint32_t *pBuff_Right;
+uint8_t LEFT_BLINK;
+uint8_t RIGHT_BLINK;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 	// Extract the LED status update bits
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
@@ -184,6 +185,7 @@ void updateBrake(uint8_t brakeData){
 // Send there out via DMA
 void updateLight(){
 	// TODO Think about the Flag Situation
+	datasentFlag = 0;
 	pBuff_Left = left_dma_Buffer;
 	pBuff_Right = right_dma_Buffer;
 	for(int i = 0; i< LEFT_NUMPIXEL; i++){
@@ -216,10 +218,28 @@ void updateLight(){
 	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, left_dma_Buffer, LEFT_DMABUF_LEN);
 	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, right_dma_Buffer, RIGHT_DMABUF_LEN);
 }
-
+// blinkData is headlight, hazard, left, right
 void updateDash(uint8_t blinkData){
 	// TODO Logic to Mask the Blinkdata and Modify Left and Right Pixel Data as Necessary
+	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
+	if ((~blinkData & 0b0010) && (blinkData&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
+			LEFT_BLINK = 0;
+			counter = INT_MAX - 800;
+	}
+	if((~blinkData & 0b0001) && (blinkData & 0b0010)){ // If Right is off and Left is On, ensure right blink is off
+			RIGHT_BLINK = 0;
+			counter = INT_MAX - 800;
+	}
 
+	if(blinkData & 0b0100){ // Hazard Case
+		LEFT_BLINK = 1;
+		RIGHT_BLINK = 1;
+		counter = 0;
+
+	}
+	else if(blinkData & 0b1000){ // don't care about headlights
+		return;
+	}
 
 	updateLight();
 }
@@ -261,21 +281,20 @@ int main(void)
   /* USER CODE BEGIN 2 */
   // Prepares the CAN hardware with the existing configuration and start allowing
   // CAN message Transmitting and Receiving
-  HAL_CAN_Start(&hcan);
-
-  // Triggers Interrupt whenever FIFO0 receive a new message
-  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
-
-
-  left_updateFlag = 0;
-  right_updateFlag = 0;
+  datasentFlag = 2;
   updateDashFlag = 0;
   updatePedalFlag = 0 ;
-
+  LEFT_BLINK = 0;
+  RIGHT_BLINK = 0;
 
   updateBrake(0b0);
   //HAL_Delay(100);
   updateDash(0b0000);
+
+
+  HAL_CAN_Start(&hcan);
+  // Triggers Interrupt whenever FIFO0 receive a new message
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -285,12 +304,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if(updateDashFlag){
+	  // Interrupt won't be faster than CPU execution since processing speed is way faster
+	  if(updateDashFlag && datasentflag == 2){
 
+		  updateDash(blinkData);
+		  updateDashFlag = 0 ; // 0 means the latest dash data has been processed
 
 	  }
-	  if(update == 1){
-
+	  if(updatePedalFlag && datasentFlag == 2){
+		  updateBrake();
+		  updatePedalFlag = 0; // 0 means the latest pedal data has been processed
 	  }
   }
   /* USER CODE END 3 */
