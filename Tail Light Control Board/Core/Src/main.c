@@ -93,11 +93,14 @@ int right_updateFlag;
 PixelRGB_t Left_PixelData[LEFT_NUMPIXEL];
 PixelRGB_t Right_PixelData[RIGHT_NUMPIXEL];
 // DMA Transfers Requires Pointer. We will create that locally later
-uint8_t left_dma_Buffer[LEFT_DMABUF_LEN];
-uint8_t right_dma_Buffer[RIGHT_DMABUF_LEN];
+uint32_t left_dma_Buffer[LEFT_DMABUF_LEN]; // Match DMA Start, if we used uint8_t then we need
+uint32_t right_dma_Buffer[RIGHT_DMABUF_LEN]; // uint32_t*, and modifying this might corrupt the DMA data
+											// contiguous to that address
 
 uint8_t blinkData;
 uint8_t brakeData;
+uint32_t *pBuff_Left;
+uint32_t *pBuff_Right;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 	// Extract the LED status update bits
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
@@ -124,7 +127,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
 	  }
 	  if(htim->ChannelState[3] == HAL_TIM_CHANNEL_STATE_READY){
-		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_4);
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
 	   }
 
 	  // Either the above or check DMA1 channel 6 -> TIM channel 1
@@ -133,13 +136,29 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
 	  }
 	  if(htim->hdma[2]->State == HAL_DMA_STATE_READY){
-		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_4);
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
 
 	  }
 	 // datasentflag = 1;
   }
 
 
+}
+
+// Assumption Both Buffers are Filled
+// Send there out via DMA
+void updateLight(TIM_HandleTypeDef *htim){
+	pBuff_Left = left_dma_Buffer;
+	pBuff_Right = right_dma_Buffer;
+	for(int i = 0; i< LEFT_NUMPIXEL; i++){
+
+	}
+
+	for(int j =0; i< RIGHT_NUMPIXEL; j++){
+
+	}
+	HAL_TIM_PWM_Start_DMA(htim3, TIM_CHANNEL_1, left_dma_Buffer, LEFT_DMABUF_LEN);
+	HAL_TIM_PWM_Start_DMA(htim3, TIM_CHANNEL_3, right_dma_Buffer, RIGHT_DMABUF_LEN);
 }
 
 
