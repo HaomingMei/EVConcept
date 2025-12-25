@@ -161,16 +161,19 @@ void updateBrake(uint8_t brakeData){
 	if(brakeData & 0b1)
 		{
 		for(int i = 0; i < LEFT_CUTOFF; i++){
-				SetPixelColor(&pixel[i], BRAKE_LIGHT);
+			SetPixelColor(&Left_PixelData[i], BRAKE_LIGHT);
 		}
-		for(int j = 0 ; j < RIGHT_CUTOFF; j++){
-			SetPixelColor(&pixel[j], BRAKE_LIGHT);
+		for(int j = RIGHT_CUTOFF ; j < RIGHT_NUMPIXEL; j++){
+			SetPixelColor(&Right_PixelData[j], BRAKE_LIGHT);
 		}
 		}
 		else{ // if 0 then default dim red
-			for(int i = 0; i < CUT_OFF; i++){
-				  SetPixelColor(&pixel[i], TAIL_LIGHT);
-			  }
+			for(int k = 0; k < LEFT_CUTOFF; k++){
+				SetPixelColor(&Left_PixelData[k], TAIL_LIGHT);
+		     }
+			for(int l = RIGHT_CUTOFF; l < RIGHT_NUMPIXEL; l++){
+				SetPixelColor(&Right_PixelData[l], TAIL_LIGHT);
+			 }
 
 		}
 		updateLight();
