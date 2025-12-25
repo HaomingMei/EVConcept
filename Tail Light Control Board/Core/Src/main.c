@@ -59,6 +59,12 @@ typedef union{
 
 #define NEOPIXEL_ZERO 19 // CCR Needed to Create "LOW" Duty Cycle
 #define NEOPIXEL_ONE 38 // CCR Needed to Create "High" Duty Cycle
+
+
+const uint8_t BRAKE_LIGHT[] = {255,0,0}; // Bright Red
+const uint8_t TAIL_LIGHT[] = {10,0,0}; // Dim Red
+const uint8_t TURNSIG_COLOR[] = {255,40,0};
+const uint8_t OFF_COLOR[] = {0,0,0};
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -128,7 +134,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 
   if( htim == &htim3){
 
-	// PICK ONE: Found out which one it is (most likely DMA one)
+	// TODO PICK ONE: Found out which one it is (most likely DMA one)
 	  // Maybe check HAL_TIM_ChannelStateTypeDef to see which one finished?
 	  if(htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
@@ -151,10 +157,28 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 
 
 }
+void updateBrake(uint8_t brakeData){
+	if(brakeData & 0b1)
+		{
+		for(int i = 0; i < LEFT_CUTOFF; i++){
+				SetPixelColor(&pixel[i], BRAKE_LIGHT);
+		}
+		for(int j = 0 ; j < RIGHT_CUTOFF; j++){
+			SetPixelColor(&pixel[j], BRAKE_LIGHT);
+		}
+		}
+		else{ // if 0 then default dim red
+			for(int i = 0; i < CUT_OFF; i++){
+				  SetPixelColor(&pixel[i], TAIL_LIGHT);
+			  }
 
+		}
+		updateLight();
+}
 // Assumption Both Buffers are Filled
 // Send there out via DMA
 void updateLight(){
+	// TODO Think about the Flag Situation
 	pBuff_Left = left_dma_Buffer;
 	pBuff_Right = right_dma_Buffer;
 	for(int i = 0; i< LEFT_NUMPIXEL; i++){
@@ -188,6 +212,12 @@ void updateLight(){
 	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, right_dma_Buffer, RIGHT_DMABUF_LEN);
 }
 
+void updateDash(uint8_t blinkData){
+	// TODO Logic to Mask the Blinkdata and Modify Left and Right Pixel Data as Necessary
+
+
+	updateLight();
+}
 
 /* USER CODE END 0 */
 
