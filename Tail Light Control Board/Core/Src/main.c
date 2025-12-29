@@ -115,7 +115,9 @@ uint8_t brakeData;
 uint16_t * pBuff_Left;
 uint16_t * pBuff_Right;
 uint8_t LEFT_BLINK;
+uint8_t LEFT_BLINK_FLAG;
 uint8_t RIGHT_BLINK;
+uint8_t RIGHT_BLINK_FLAG;
 
 int counter;
 void SetPixelColor(PixelRGB_t* p, const uint8_t color[]){
@@ -219,20 +221,32 @@ void updateDash(){
 	// TODO Logic to Mask the Blinkdata and Modify Left and Right Pixel Data as Necessary
 	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
 	if ((~blinkData & 0b0010) && (blinkData&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
+		for(int i = LEFT_CUTOFF; i < LEFT_NUMPIXEL; i++){
+			SetPixelColor(&Left_PixelData[i], OFF_COLOR);
+		}
 		LEFT_BLINK = 0;
+		LEFT_BLINK_FLAG = 0;
 		RIGHT_BLINK = 1;
+		RIGHT_BLINK_FLAG = 1;
 		counter =  0;
 
 	}
 	else if((~blinkData & 0b0001) && (blinkData & 0b0010)){ // If Right is off and Left is On, ensure right blink is off
+		for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
+		  SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+	    }
 		RIGHT_BLINK = 0;
+		RIGHT_BLINK_FLAG = 0;
 		LEFT_BLINK = 1;
+		LEFT_BLINK_FLAG = 1;
 		counter = 0;
 	}
 	else if(blinkData & 0b0100){ // Hazard Case
 
 		LEFT_BLINK = 1;
+		LEFT_BLINK_FLAG = 1;
 		RIGHT_BLINK = 1;
+		RIGHT_BLINK_FLAG = 1;
 		counter = 0;
 
 	}
@@ -248,7 +262,9 @@ void updateDash(){
 			SetPixelColor(&Left_PixelData[j], OFF_COLOR);
 		}
 		LEFT_BLINK = 0;
+		LEFT_BLINK_FLAG = 1; // Reset it to default
 		RIGHT_BLINK = 0;
+		RIGHT_BLINK_FLAG = 1; // Rest it to default
 		counter =  INT_MAX - 800;
 
 	}
@@ -318,28 +334,33 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  if(counter + 800 <= HAL_GetTick()){
 		  if(LEFT_BLINK){
-			  for(int i = LEFT_CUTOFF; i < LEFT_NUMPIXEL; i++){
-				  SetPixelColor(&Left_PixelData[i], TURNSIG_COLOR);
+			  if(LEFT_BLINK_FLAG){
+				  for(int i = LEFT_CUTOFF; i < LEFT_NUMPIXEL; i++){
+					  SetPixelColor(&Left_PixelData[i], TURNSIG_COLOR);
+				  }
+				  LEFT_BLINK_FLAG = 0;
 			  }
-			  LEFT_BLINK = 0;
-		  }
-		  else if (LEFT_BLINK == 0){
-			  for(int i = LEFT_CUTOFF; i < LEFT_NUMPIXEL; i++){
-				  SetPixelColor(&Left_PixelData[i], OFF_COLOR);
+			  else if(LEFT_BLINK_FLAG == 0){
+				  for(int i = LEFT_CUTOFF; i < LEFT_NUMPIXEL; i++){
+					  SetPixelColor(&Left_PixelData[i], OFF_COLOR);
+				  }
+				  LEFT_BLINK_FLAG = 1;
 			  }
-			  LEFT_BLINK = 1;
+
 		  }
 		  if(RIGHT_BLINK){
-			  for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
-				  SetPixelColor(&Right_PixelData[i], TURNSIG_COLOR);
+			  if(RIGHT_BLINK_FLAG){
+				  for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
+					  SetPixelColor(&Right_PixelData[i], TURNSIG_COLOR);
+				  }
+				  RIGHT_BLINK_FLAG = 0 ;
 			  }
-			  RIGHT_BLINK = 0;
-		  }
-		  else if(RIGHT_BLINK == 0){
-			  for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
-				  SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+			  else if(RIGHT_BLINK_FLAG == 0){
+				  for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
+					  SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+				  }
+				  RIGHT_BLINK_FLAG = 1;
 			  }
-			  RIGHT_BLINK = 1;
 		  }
 		  counter = HAL_GetTick();
 		  updateLight();

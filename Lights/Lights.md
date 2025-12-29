@@ -17,7 +17,11 @@
         - Fixed: Used a different channel that only has TIM3_CH3 on its own
         - TRIG will not happen since slave/trig source is not configured
     - Conclusion: Used TIM3_CH3 and TIM3_CH1 to Avoid Dealing with UP for the time being
-
+- Definitions:
+    - RIGHT_BLINK: Toggles Between TURN_SIG and OFF_COLOR for the RIGHT
+    - LEFT_BLINK: Toggles Between TURN_SIG and OFF_CLOR for the LEFt
+    - RIGHT_BLINK_FLAG: Indicates whether the next transition should be OFF_COLOR OR TURN_SIG
+    - LEFT_BLINK_FLAG:  Indicates whether the next transition should be OFF_COLOR OR TURN_SIG
 - Task: Which State updates when DMA finishes?
     - ChannelState?
     - HDMA->state?
@@ -36,4 +40,3 @@
         - Find out whether there is typecast in between that avoids accessing by uint32_t, we want access by uint16_t
 
 - Task: Finish updateDash() function
-    
