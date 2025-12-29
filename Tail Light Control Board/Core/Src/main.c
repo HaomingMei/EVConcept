@@ -221,16 +221,15 @@ void updateDash(){
 	if ((~blinkData & 0b0010) && (blinkData&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
 		LEFT_BLINK = 0;
 		RIGHT_BLINK = 1;
-
 		counter =  0;
 
 	}
-	if((~blinkData & 0b0001) && (blinkData & 0b0010)){ // If Right is off and Left is On, ensure right blink is off
+	else if((~blinkData & 0b0001) && (blinkData & 0b0010)){ // If Right is off and Left is On, ensure right blink is off
 		RIGHT_BLINK = 0;
 		LEFT_BLINK = 1;
 		counter = 0;
 	}
-	if(blinkData & 0b0100){ // Hazard Case
+	else if(blinkData & 0b0100){ // Hazard Case
 
 		LEFT_BLINK = 1;
 		RIGHT_BLINK = 1;
@@ -241,6 +240,7 @@ void updateDash(){
 		return;
 	}
 	else{ // Toggled all Off
+		// No Blinking
 		for(int i = 0; i < (RIGHT_NUMPIXEL - RIGHT_CUTOFF); i++){
 			SetPixelColor(&Right_PixelData[i], OFF_COLOR);
 		}
@@ -296,8 +296,8 @@ int main(void)
   datasentFlag = 2;
 //  updateDashFlag = 0;
 //  updatePedalFlag = 0 ;
-//  LEFT_BLINK = 0;
-//  RIGHT_BLINK = 0;
+  LEFT_BLINK = 0;
+  RIGHT_BLINK = 0;
 
   updateBrake(0b0);
   //HAL_Delay(100);
@@ -318,8 +318,31 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  if(counter + 800 <= HAL_GetTick()){
 		  if(LEFT_BLINK){
-
+			  for(int i = LEFT_CUTOFF; i < LEFT_NUMPIXEL; i++){
+				  SetPixelColor(&Left_PixelData[i], TURNSIG_COLOR);
+			  }
+			  LEFT_BLINK = 0;
 		  }
+		  else if (LEFT_BLINK == 0){
+			  for(int i = LEFT_CUTOFF; i < LEFT_NUMPIXEL; i++){
+				  SetPixelColor(&Left_PixelData[i], OFF_COLOR);
+			  }
+			  LEFT_BLINK = 1;
+		  }
+		  if(RIGHT_BLINK){
+			  for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
+				  SetPixelColor(&Right_PixelData[i], TURNSIG_COLOR);
+			  }
+			  RIGHT_BLINK = 0;
+		  }
+		  else if(RIGHT_BLINK == 0){
+			  for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
+				  SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+			  }
+			  RIGHT_BLINK = 1;
+		  }
+		  counter = HAL_GetTick();
+		  updateLight();
 	  }
 	  // Interrupt won't be faster than CPU execution since processing speed is way faster
 	  if(updateDashFlag && datasentFlag == 2){
