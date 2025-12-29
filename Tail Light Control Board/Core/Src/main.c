@@ -320,9 +320,9 @@ int main(void)
   RIGHT_BLINK = 0;
   RIGHT_BLINK_FLAG = 1;
 
-  updateBrake(0b0);
+  updateBrake(0b0); // Dim RED
   //HAL_Delay(100);
-  updateDash(0b0000);
+  updateDash(0b0000); // OFF
 
 
   HAL_CAN_Start(&hcan);
