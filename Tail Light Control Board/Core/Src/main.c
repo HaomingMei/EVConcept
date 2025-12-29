@@ -132,12 +132,14 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 		if(RxHeader.StdId == DASHLIGHT_ID){
 			// Dashboard only controls the blinking of the lights
 			// Hazard or Left or Right
+			updateDashFlag = 1;
 			blinkData = RxData[0];
 		}
 		else if(RxHeader.StdId == BRAKEBOARD_ID){
 			// Brakeboard only controls the Red portion of the lights
 			// Bright Red / Dim Red
 			brakeData = RxData[0];
+			updatePedalFlag = 1;
 		}
 	}
 }
@@ -310,10 +312,13 @@ int main(void)
   // Prepares the CAN hardware with the existing configuration and start allowing
   // CAN message Transmitting and Receiving
   datasentFlag = 2;
-//  updateDashFlag = 0;
-//  updatePedalFlag = 0 ;
+  updateDashFlag = 0;
+  updatePedalFlag = 0 ;
+
   LEFT_BLINK = 0;
+  LEFT_BLINK_FLAG = 1;
   RIGHT_BLINK = 0;
+  RIGHT_BLINK_FLAG = 1;
 
   updateBrake(0b0);
   //HAL_Delay(100);
@@ -346,7 +351,6 @@ int main(void)
 				  }
 				  LEFT_BLINK_FLAG = 1;
 			  }
-
 		  }
 		  if(RIGHT_BLINK){
 			  if(RIGHT_BLINK_FLAG){
