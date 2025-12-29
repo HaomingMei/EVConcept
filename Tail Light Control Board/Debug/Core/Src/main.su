@@ -1,9 +1,9 @@
 ../Core/Src/main.c:120:6:SetPixelColor	0	static
 ../Core/Src/main.c:125:6:HAL_CAN_RxFifo0MsgPendingCallback	16	static
 ../Core/Src/main.c:141:6:HAL_TIM_PWM_PulseFinishedCallback	8	static
-../Core/Src/main.c:195:6:updateLight	24	static
-../Core/Src/main.c:171:6:updateBrake	0	static
-../Core/Src/main.c:231:6:updateDash	0	static
-../Core/Src/main.c:335:6:SystemClock_Config	72	static,ignoring_inline_asm
-../Core/Src/main.c:262:5:main	72	static,ignoring_inline_asm
-../Core/Src/main.c:532:6:Error_Handler	0	static,ignoring_inline_asm
+../Core/Src/main.c:197:6:updateLight	24	static
+../Core/Src/main.c:173:6:updateBrake	0	static
+../Core/Src/main.c:233:6:updateDash	0	static
+../Core/Src/main.c:337:6:SystemClock_Config	72	static,ignoring_inline_asm
+../Core/Src/main.c:264:5:main	72	static,ignoring_inline_asm
+../Core/Src/main.c:534:6:Error_Handler	0	static,ignoring_inline_asm

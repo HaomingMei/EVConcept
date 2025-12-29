@@ -23,6 +23,10 @@
     - HDMA->state?
     - Check: DMA Start -> DMA_START_IT
     - Found: HAL_DMA_IRQHandler sets hdma->State = HAL_DMA_STATE_READY;
+    - Found: TIM_DMADelayPulseCplt (Complete Callback function called), this happens after hdma->State = HAL_DMA_STATE_READY
+        - Sets  TIM_CHANNEL_STATE_SET(htim, TIM_CHANNEL_X, HAL_TIM_CHANNEL_STATE_READY)
+        - Then, HAL_TIM_PWM_PulseFinishedCallback gets called
+    - Conclusion: Check both in HAL_TIM_PWM_PulseFinishedCallback
 
 - Task: uint16_t vs uint32_t for buffer size
     - Problem: Buffer has to be uint16_t to fit everything into the SRAM, but HAL_TIM_PWM_Start_DMA takes uint32_t*
@@ -30,3 +34,6 @@
     - Each tick does CNT ==? CCR, and both are 16 bit (technically 32 bit but first 16 bit are reserved)
     - Check: Confirm whether memory access is by 16bit
         - Find out whether there is typecast in between that avoids accessing by uint32_t, we want access by uint16_t
+
+- Task: Finish updateDash() function
+    
