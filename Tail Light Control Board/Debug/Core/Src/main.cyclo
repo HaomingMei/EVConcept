@@ -1,7 +1,7 @@
 ../Core/Src/main.c:123:6:SetPixelColor	1
 ../Core/Src/main.c:128:6:HAL_CAN_RxFifo0MsgPendingCallback	4
 ../Core/Src/main.c:147:6:HAL_TIM_PWM_PulseFinishedCallback	6
-../Core/Src/main.c:186:6:updateLight	5
+../Core/Src/main.c:186:6:updateLight	9
 ../Core/Src/main.c:162:6:updateBrake	6
 ../Core/Src/main.c:222:6:updateDash	9
 ../Core/Src/main.c:391:6:SystemClock_Config	3

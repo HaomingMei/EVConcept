@@ -34,6 +34,7 @@
     - Each tick does CNT ==? CCR, and both are 16 bit (technically 32 bit but first 16 bit are reserved)
     - Check: Confirm whether memory access is by 16bit
         - Find out whether there is typecast in between that avoids accessing by uint32_t, we want access by uint16_t
+    - Test this later!
 
 - Task: Finish updateDash() function
     - Definitions:
