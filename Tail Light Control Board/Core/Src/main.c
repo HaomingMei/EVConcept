@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-//#include <limits.h>
+#include <limits.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -114,7 +114,8 @@ uint8_t blinkData;
 uint8_t brakeData;
 uint16_t * pBuff_Left;
 uint16_t * pBuff_Right;
-uint8_t BLINK_STATE;
+uint8_t LEFT_BLINK;
+uint8_t RIGHT_BLINK;
 
 int counter;
 void SetPixelColor(PixelRGB_t* p, const uint8_t color[]){
@@ -125,16 +126,17 @@ void SetPixelColor(PixelRGB_t* p, const uint8_t color[]){
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 	// Extract the LED status update bits
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
-
-	if(RxHeader.StdId == DASHLIGHT_ID){
-		// Dashboard only controls the blinking of the lights
-		// Hazard or Left or Right
-		blinkData = RxData[0];
-	}
-	else if(RxHeader.StdId == BRAKEBOARD_ID){
-		// Brakeboard only controls the Red portion of the lights
-		// Bright Red / Dim Red
-		brakeData = RxData[0];
+	if(datasentFlag == 2){
+		if(RxHeader.StdId == DASHLIGHT_ID){
+			// Dashboard only controls the blinking of the lights
+			// Hazard or Left or Right
+			blinkData = RxData[0];
+		}
+		else if(RxHeader.StdId == BRAKEBOARD_ID){
+			// Brakeboard only controls the Red portion of the lights
+			// Bright Red / Dim Red
+			brakeData = RxData[0];
+		}
 	}
 }
 
@@ -157,12 +159,12 @@ void updateBrake(){
 	datasentFlag = 0;
 	if(brakeData & 0b1)
 	{
-	for(int i = 0; i < LEFT_CUTOFF; i++){
-		SetPixelColor(&Left_PixelData[i], BRAKE_LIGHT);
-	}
-	for(int j = RIGHT_CUTOFF ; j < RIGHT_NUMPIXEL; j++){
-		SetPixelColor(&Right_PixelData[j], BRAKE_LIGHT);
-	}
+		for(int i = 0; i < LEFT_CUTOFF; i++){
+			SetPixelColor(&Left_PixelData[i], BRAKE_LIGHT);
+		}
+		for(int j = RIGHT_CUTOFF ; j < RIGHT_NUMPIXEL; j++){
+			SetPixelColor(&Right_PixelData[j], BRAKE_LIGHT);
+		}
 	}
 	else{ // if 0 then default dim red
 		for(int k = 0; k < LEFT_CUTOFF; k++){
@@ -217,22 +219,38 @@ void updateDash(){
 	// TODO Logic to Mask the Blinkdata and Modify Left and Right Pixel Data as Necessary
 	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
 	if ((~blinkData & 0b0010) && (blinkData&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
-//			LEFT_BLINK = 0;
-			counter = 0xFFFF - 800;
+		LEFT_BLINK = 0;
+		RIGHT_BLINK = 1;
+
+		counter =  0;
+
 	}
 	if((~blinkData & 0b0001) && (blinkData & 0b0010)){ // If Right is off and Left is On, ensure right blink is off
-//			RIGHT_BLINK = 0;
-			counter = 0xFFFF - 800;
+		RIGHT_BLINK = 0;
+		LEFT_BLINK = 1;
+		counter = 0;
 	}
-
 	if(blinkData & 0b0100){ // Hazard Case
-//		LEFT_BLINK = 1;
-//		RIGHT_BLINK = 1;
+
+		LEFT_BLINK = 1;
+		RIGHT_BLINK = 1;
 		counter = 0;
 
 	}
 	else if(blinkData & 0b1000){ // don't care about headlights
 		return;
+	}
+	else{ // Toggled all Off
+		for(int i = 0; i < (RIGHT_NUMPIXEL - RIGHT_CUTOFF); i++){
+			SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+		}
+		for(int j = LEFT_CUTOFF; j < LEFT_NUMPIXEL; j++){
+			SetPixelColor(&Left_PixelData[j], OFF_COLOR);
+		}
+		LEFT_BLINK = 0;
+		RIGHT_BLINK = 0;
+		counter =  INT_MAX - 800;
+
 	}
 
 	updateLight();
@@ -298,6 +316,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  if(counter + 800 <= HAL_GetTick()){
+		  if(LEFT_BLINK){
+
+		  }
+	  }
 	  // Interrupt won't be faster than CPU execution since processing speed is way faster
 	  if(updateDashFlag && datasentFlag == 2){
 
