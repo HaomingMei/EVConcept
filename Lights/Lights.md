@@ -4,8 +4,6 @@
 
 ## Callback Status Update
 - Find out what PWM completion updates?
-    - ChannelState?
-    - HDMA->state
     - Each hdma (DMA_HandleTypeDef) channel is assigned to a void* parent to the peripheral it's responsible for, in our case htim3 channel1
     - Dataflow: MX_TIM3_Init -> HAL_TIM_PWM_INIT -> __HAL_LINKDMA 
         - Links DMA channel to TIMx + channel y and the other way around too
@@ -18,3 +16,14 @@
             - When CNT == CCR? but the old code never set that so I am confused
         - Fixed: Used a different channel that only has TIM3_CH3 on its own
         - TRIG will not happen since slave/trig source is not configured
+- Task: Which State updates when DMA finishes?
+    - ChannelState?
+    - HDMA->state?
+    - Check: DMA Start -> DMA_START_IT
+
+- Task: uint16_t vs uint32_t for buffer size
+    - Problem: Buffer has to be uint16_t to fit everything into the SRAM, but HAL_TIM_PWM_Start_DMA takes uint32_t*
+    - What we have right now: DMA width is 16bit, so it should be fine
+    - Each tick does CNT ==? CCR, and both are 16 bit (technically 32 bit but first 16 bit are reserved)
+    - Check: Confirm whether memory access is by 16bit
+        - Find out whether there is typecast in between that avoids accessing by uint32_t, we want access by uint16_t
