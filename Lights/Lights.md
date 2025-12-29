@@ -16,10 +16,13 @@
             - When CNT == CCR? but the old code never set that so I am confused
         - Fixed: Used a different channel that only has TIM3_CH3 on its own
         - TRIG will not happen since slave/trig source is not configured
+    - Conclusion: Used TIM3_CH3 and TIM3_CH1 to Avoid Dealing with UP for the time being
+
 - Task: Which State updates when DMA finishes?
     - ChannelState?
     - HDMA->state?
     - Check: DMA Start -> DMA_START_IT
+    - Found: HAL_DMA_IRQHandler sets hdma->State = HAL_DMA_STATE_READY;
 
 - Task: uint16_t vs uint32_t for buffer size
     - Problem: Buffer has to be uint16_t to fit everything into the SRAM, but HAL_TIM_PWM_Start_DMA takes uint32_t*

@@ -142,24 +142,24 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 
   if( htim == &htim3){
 
-	// TODO PICK ONE: Found out which one it is (most likely DMA one)
-	  // Maybe check HAL_TIM_ChannelStateTypeDef to see which one finished?
-	  if(htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
-		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
-		  datasentFlag +=1;
-	  }
-	  if(htim->ChannelState[3] == HAL_TIM_CHANNEL_STATE_READY){
-		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
-		  datasentFlag += 1;
-	   }
+//	  // Maybe check HAL_TIM_ChannelStateTypeDef to see which one finished?
+//	  if(htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
+//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+//		  datasentFlag +=1;
+//	  }
+//	  if(htim->ChannelState[3] == HAL_TIM_CHANNEL_STATE_READY){
+//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
+//		  datasentFlag += 1;
+//	   }
 
 	  // Either the above or check DMA1 channel 6 -> TIM channel 1
 	  // DMA1 channel 3 -> TIM channel 4
-	  if(htim->hdma[5]->State ==  HAL_DMA_STATE_READY){
+	  // Note that TIM_Channel 3 corresponds to hdma[x], it's not zero-indexed
+	  if(htim->hdma[1]->State ==  HAL_DMA_STATE_READY){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
 		  datasentFlag += 1;
 	  }
-	  if(htim->hdma[2]->State == HAL_DMA_STATE_READY){
+	  if(htim->hdma[3]->State == HAL_DMA_STATE_READY){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
 		  datasentFlag += 1;
 	  }
