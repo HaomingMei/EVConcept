@@ -132,8 +132,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 		if(RxHeader.StdId == DASHLIGHT_ID){
 			// Dashboard only controls the blinking of the lights
 			// Hazard or Left or Right
-			updateDashFlag = 1;
 			blinkData = RxData[0];
+			updateDashFlag = 1;
 		}
 		else if(RxHeader.StdId == BRAKEBOARD_ID){
 			// Brakeboard only controls the Red portion of the lights
