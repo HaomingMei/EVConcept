@@ -45,13 +45,13 @@ typedef union{
 #define LEFT_NUMPIXEL 107 // Number of Pixel for the in Total for Left Tail Light
 #define LEFT_CUTOFF 76    // Number of Pixel for the Brake/Default Signal (0-76 Red)
 // The Rest are Used for Turn/Hazard (Yelllow) 76-107 (exclude 107)
-#define LEFT_DMABUF_LEN (LEFT_NUMPIXEL*24) + 100
 
 
 #define RIGHT_NUMPIXEL 120 // Number of Pixel for the Upper Portion for the Right Tail Light (Turn/Hazard Signal)
 #define RIGHT_CUTOFF 80 // Number of Pixel for the Brake/Default Signal (40-120, 120 exclusvie RED)
 // 0-40, 40 exclusive are the pixels for the Turn/Hazard (Yellow) Signals
 #define RIGHT_DMABUF_LEN (RIGHT_NUMPIXEL * 24) + 100 // 100 Bits Corresponds to 100*0.96us of Lows
+#define LEFT_DMABUF_LEN (LEFT_NUMPIXEL*24) + 100
 
 
 #define DASHLIGHT_ID 5
@@ -145,10 +145,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 }
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
-
   if( htim == &htim3){
-	  // Note that TIM_Channel 3 corresponds to hdma[x], it's not zero-indexed
-	  // TIM channel are zero-indexed as stated in TIM_DMADelayPulseCplt
+	  // Note that TIM_Channel 3 corresponds to hdma[3], it's not zero-indexed (DMA)
+	  // TIM channel are zero-indexed as stated in TIM_DMADelayPulseCplt 	   (TIM Status)
 	  if(htim->hdma[1]->State ==  HAL_DMA_STATE_READY && htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
 		  datasentFlag += 1;
@@ -184,7 +183,6 @@ void updateBrake(){
 // Assumption Both Buffers are Filled
 // Send there out via DMA
 void updateLight(){
-	// TODO Think about the Flag Situation
 	datasentFlag = 0;
 	pBuff_Left = left_dma_Buffer;
 	pBuff_Right = right_dma_Buffer;
@@ -218,7 +216,7 @@ void updateLight(){
 	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)left_dma_Buffer, LEFT_DMABUF_LEN);
 	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)right_dma_Buffer, RIGHT_DMABUF_LEN);
 }
-// blinkData is headlight, hazard, left, right
+// blinkData is Headlight, Hazard, Left, Right
 void updateDash(){
 	// TODO Logic to Mask the Blinkdata and Modify Left and Right Pixel Data as Necessary
 	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
@@ -266,7 +264,7 @@ void updateDash(){
 		LEFT_BLINK = 0;
 		LEFT_BLINK_FLAG = 1; // Reset it to default
 		RIGHT_BLINK = 0;
-		RIGHT_BLINK_FLAG = 1; // Rest it to default
+		RIGHT_BLINK_FLAG = 1; // Reset it to default
 		counter =  INT_MAX - 800;
 
 	}
