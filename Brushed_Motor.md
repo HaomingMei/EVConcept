@@ -2,7 +2,12 @@
 ## PCB Unit Testing
 - Setup: Just the PCB + Programmer + Laptop
 - PCB Unit Test
-    - Continunity
+    - Continunity 
+        - MCU
+            - MCU R2 to Pad ❌ -> ✅
+            - MCU DBGLED1 to Pad ❌ -> ✅
+            - MCU DBGLED2 to PAD ❌ -> ✅
+        - CAN Transceiver ❌ 
     - Resistance maybe
 
 - MCU Programmable?
