@@ -10,6 +10,7 @@
         - CAN Transceiver 3.3V to Pad ❌ -> ✅
         - U3 (Voltage Translator) T1 to Pad ❌ -> ✅
         - Others ✅
+        - Soldered 6 NMOS ✅
     - Resistance maybe
 
 - MCU Programmable?
