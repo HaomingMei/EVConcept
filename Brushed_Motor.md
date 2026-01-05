@@ -6,8 +6,9 @@
         - MCU
             - MCU R2 to Pad ❌ -> ✅
             - MCU DBGLED1 to Pad ❌ -> ✅
-            - MCU DBGLED2 to PAD ❌ -> ✅
-        - CAN Transceiver ❌ 
+            - MCU DBGLED2 to Pad ❌ -> ✅
+        - CAN Transceiver 3.3V to Pad ❌ -> ✅
+        - U3 (Voltage Translator) T1 to Pad ❌
     - Resistance maybe
 
 - MCU Programmable?
