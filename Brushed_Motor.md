@@ -11,10 +11,13 @@
         - U3 (Voltage Translator) T1 to Pad ❌ -> ✅
         - Others ✅
         - Soldered 6 NMOS ✅
-    - Resistance maybe
 
 - MCU Programmable?
-    - See if MCU is programmable and has stable current draw
+    - See if MCU is programmable and has stable ]current draw
+        - No, device not found.
+        - Could be mcu issue
+    - Resistance 
+        - All mcu pins seem fine, maybe 2 and 3 not but I am not sure
 - Relay Verfiication
     - Test all 4 possible states with 48V input
 
