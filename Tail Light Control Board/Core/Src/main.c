@@ -155,25 +155,25 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 	  // Note that TIM_Channel 3 corresponds to hdma[3], it's not zero-indexed (DMA)
 	  // TIM channel are zero-indexed as stated in TIM_DMADelayPulseCplt 	   (TIM Status)
 	  if(htim->hdma[1]->State ==  HAL_DMA_STATE_READY || htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
-		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
 		  datasentFlag |= 0b00000001;
 	  }
 	  if(htim->hdma[3]->State == HAL_DMA_STATE_READY || htim->ChannelState[2] == HAL_TIM_CHANNEL_STATE_READY){
 
-		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
+//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
 		  datasentFlag |= 0b00000010;
 
 	  }
 #ifdef TESTING
+#endif
 		  left_remaining = htim->hdma[1]->Instance->CNDTR;
 		  right_remaining = htim->hdma[3]->Instance->CNDTR;
-#endif
 
-//	  if(datasentFlag == 2){
-//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
-//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
-//
-//	  }
+	  if(datasentFlag == 0b0011){
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+
+	  }
 
 //	  if (htim == &htim3)
 //	     {
@@ -189,24 +189,38 @@ void updateBrake(){
 	{
 		for(int i = 0; i < LEFT_CUTOFF; i++){
 			SetPixelColor(&Left_PixelData[i], BRAKE_LIGHT);
+			SetPixelColor(&Right_PixelData[i], BRAKE_LIGHT);
 		}
-		for(int j = 0 ; j < RIGHT_CUTOFF; j++){
-			SetPixelColor(&Right_PixelData[j], BRAKE_LIGHT);
-		}
+//		for(int j = 0 ; j < RIGHT_CUTOFF; j++){
+//		}
 	}
 	else{ // if 0 then default dim red
 		for(int k = 0; k < LEFT_CUTOFF; k++){
 			SetPixelColor(&Left_PixelData[k], TAIL_LIGHT);
+			SetPixelColor(&Right_PixelData[k], TAIL_LIGHT);
 		 }
-		for(int l = 0; l < RIGHT_CUTOFF; l++){
-			SetPixelColor(&Right_PixelData[l], TAIL_LIGHT);
-		 }
+//		for(int l = 0; l < RIGHT_CUTOFF; l++){
+//		 }
 
 	}
 	updateLight();
 }
 // Assumption Both Buffers are Filled
 // Send there out via DMA
+
+void LightsInit(){
+	datasentFlag = 0;
+	for(int k = 0; k < LEFT_CUTOFF; k++){
+		SetPixelColor(&Left_PixelData[k], TAIL_LIGHT);
+		SetPixelColor(&Right_PixelData[k], TAIL_LIGHT);
+	 }
+	for(int i = LEFT_CUTOFF; i <LEFT_NUMPIXEL; i++){
+		SetPixelColor(&Left_PixelData[i], OFF_COLOR);
+		SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+	}
+	updateLight();
+}
+
 void updateLight(){
 	datasentFlag = 0;
 	pBuff_Left = left_dma_Buffer;
@@ -244,6 +258,7 @@ void updateLight(){
 	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)right_dma_Buffer, RIGHT_DMABUF_LEN);
 	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)left_dma_Buffer, LEFT_DMABUF_LEN);
 	__set_PRIMASK(PRIMASK_STATE);
+	__enable_irq();
 }
 // blinkData is Headlight, Hazard, Left, Right
 void updateDash(){
@@ -348,7 +363,7 @@ int main(void)
 
   HAL_GPIO_WritePin(LVL_SHIFT_EN_GPIO_Port, LVL_SHIFT_EN_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(MUX_SEL_GPIO_Port, MUX_SEL_Pin, GPIO_PIN_RESET); // 0 Select LED_A_5V to LED_A_OUTPUT rather than LED_B_5V
-  datasentFlag = 2;
+  datasentFlag = 0b00000011;
   updateDashFlag = 0;
   updatePedalFlag = 0 ;
 
@@ -360,9 +375,11 @@ int main(void)
   //HAL_Delay(100);
   brakeData = 0b0;
   blinkData = 0b0000;
-  HAL_Delay(100);
-  updateDash(); // OFF
-  updateBrake(); // Dim RED
+//  HAL_Delay(500);
+//  updateDash(); // OFF
+//  HAL_Delay(500);
+//  updateBrake(); // Dim RED
+  LightsInit();
 
   HAL_CAN_Start(&hcan);
   // Triggers Interrupt whenever FIFO0 receive a new message
