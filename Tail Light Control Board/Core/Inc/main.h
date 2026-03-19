@@ -61,10 +61,14 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LEFT_TAILLIGHT_Pin GPIO_PIN_6
 #define LEFT_TAILLIGHT_GPIO_Port GPIOA
+#define MUX_SEL_Pin GPIO_PIN_7
+#define MUX_SEL_GPIO_Port GPIOA
 #define RIGHT_TAILLIGHT_Pin GPIO_PIN_0
 #define RIGHT_TAILLIGHT_GPIO_Port GPIOB
 #define LED_CAN_Pin GPIO_PIN_15
 #define LED_CAN_GPIO_Port GPIOB
+#define LVL_SHIFT_EN_Pin GPIO_PIN_5
+#define LVL_SHIFT_EN_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

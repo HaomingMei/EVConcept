@@ -41,14 +41,18 @@ typedef union{
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+//#define TESTING
+
 // Note that the layout is different between the left and the right tail lights
-#define LEFT_NUMPIXEL 107 // Number of Pixel for the in Total for Left Tail Light
-#define LEFT_CUTOFF 76    // Number of Pixel for the Brake/Default Signal (0-76 Red)
+//#define LEFT_NUMPIXEL 107 // Number of Pixel for the in Total for Left Tail Light
+#define LEFT_NUMPIXEL 52
+#define LEFT_CUTOFF 22    // Number of Pixel for the Brake/Default Signal (0-76 Red)
 // The Rest are Used for Turn/Hazard (Yelllow) 76-107 (exclude 107)
 
 
-#define RIGHT_NUMPIXEL 120 // Number of Pixel for the Upper Portion for the Right Tail Light (Turn/Hazard Signal)
-#define RIGHT_CUTOFF 80 // Number of Pixel for the Brake/Default Signal (40-120, 120 exclusvie RED)
+//#define RIGHT_NUMPIXEL 120 // Number of Pixel for the Upper Portion for the Right Tail Light (Turn/Hazard Signal)
+#define RIGHT_NUMPIXEL 52
+#define RIGHT_CUTOFF 22 // Number of Pixel for the Brake/Default Signal (40-120, 120 exclusvie RED)
 // 0-40, 40 exclusive are the pixels for the Turn/Hazard (Yellow) Signals
 #define RIGHT_DMABUF_LEN (RIGHT_NUMPIXEL * 24) + 100 // 100 Bits Corresponds to 100*0.96us of Lows
 #define LEFT_DMABUF_LEN (LEFT_NUMPIXEL*24) + 100
@@ -58,12 +62,11 @@ typedef union{
 #define BRAKEBOARD_ID 2
 
 #define NEOPIXEL_ZERO 19 // CCR Needed to Create "LOW" Duty Cycle
-#define NEOPIXEL_ONE 38 // CCR Needed to Create "High" Duty Cycle
-
-
+//#define NEOPIXEL_ONE 38 // CCR Needed to Create "High" Duty Cycle
+#define NEOPIXEL_ONE 38
 const uint8_t BRAKE_LIGHT[] = {255,0,0}; // Bright Red
 const uint8_t TAIL_LIGHT[] = {10,0,0}; // Dim Red
-const uint8_t TURNSIG_COLOR[] = {255,40,0};
+const uint8_t TURNSIG_COLOR[] = {255,20,0};
 const uint8_t OFF_COLOR[] = {0,0,0};
 /* USER CODE END PD */
 
@@ -107,13 +110,13 @@ uint8_t updatePedalFlag;
 PixelRGB_t Left_PixelData[LEFT_NUMPIXEL] = {0};
 PixelRGB_t Right_PixelData[RIGHT_NUMPIXEL] = {0};
 // DMA Transfers Requires Pointer. We will create that locally later
-uint16_t left_dma_Buffer[LEFT_DMABUF_LEN] = {0}; // Match DMA Start, if we used uint8_t then we need
-uint16_t right_dma_Buffer[RIGHT_DMABUF_LEN] = {0}; // uint32_t*, and modifying this might corrupt the DMA data
+uint32_t left_dma_Buffer[LEFT_DMABUF_LEN] = {0}; // Match DMA Start, if we used uint8_t then we need
+uint32_t right_dma_Buffer[RIGHT_DMABUF_LEN] = {0}; // uint32_t*, and modifying this might corrupt the DMA data
 											// contiguous to that addres
 uint8_t blinkData;
 uint8_t brakeData;
-uint16_t * pBuff_Left;
-uint16_t * pBuff_Right;
+uint32_t * pBuff_Left;
+uint32_t * pBuff_Right;
 uint8_t LEFT_BLINK;
 uint8_t LEFT_BLINK_FLAG;
 uint8_t RIGHT_BLINK;
@@ -128,7 +131,7 @@ void SetPixelColor(PixelRGB_t* p, const uint8_t color[]){
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 	// Extract the LED status update bits
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
-	if(datasentFlag == 2){
+	if(datasentFlag & 0b00000011){
 		if(RxHeader.StdId == DASHLIGHT_ID){
 			// Dashboard only controls the blinking of the lights
 			// Hazard or Left or Right
@@ -145,17 +148,39 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 }
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
+	uint32_t left_remaining;
+	uint32_t right_remaining;
+
   if( htim == &htim3){
 	  // Note that TIM_Channel 3 corresponds to hdma[3], it's not zero-indexed (DMA)
 	  // TIM channel are zero-indexed as stated in TIM_DMADelayPulseCplt 	   (TIM Status)
-	  if(htim->hdma[1]->State ==  HAL_DMA_STATE_READY && htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
+	  if(htim->hdma[1]->State ==  HAL_DMA_STATE_READY || htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
-		  datasentFlag += 1;
+		  datasentFlag |= 0b00000001;
 	  }
-	  if(htim->hdma[3]->State == HAL_DMA_STATE_READY && htim->ChannelState[2] == HAL_TIM_CHANNEL_STATE_READY){
+	  if(htim->hdma[3]->State == HAL_DMA_STATE_READY || htim->ChannelState[2] == HAL_TIM_CHANNEL_STATE_READY){
+
 		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
-		  datasentFlag += 1;
+		  datasentFlag |= 0b00000010;
+
 	  }
+#ifdef TESTING
+		  left_remaining = htim->hdma[1]->Instance->CNDTR;
+		  right_remaining = htim->hdma[3]->Instance->CNDTR;
+#endif
+
+//	  if(datasentFlag == 2){
+//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
+//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+//
+//	  }
+
+//	  if (htim == &htim3)
+//	     {
+//	         HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+//	         HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
+//	         datasentFlag = 2;
+//	     }
   }
 }
 void updateBrake(){
@@ -165,7 +190,7 @@ void updateBrake(){
 		for(int i = 0; i < LEFT_CUTOFF; i++){
 			SetPixelColor(&Left_PixelData[i], BRAKE_LIGHT);
 		}
-		for(int j = RIGHT_CUTOFF ; j < RIGHT_NUMPIXEL; j++){
+		for(int j = 0 ; j < RIGHT_CUTOFF; j++){
 			SetPixelColor(&Right_PixelData[j], BRAKE_LIGHT);
 		}
 	}
@@ -173,7 +198,7 @@ void updateBrake(){
 		for(int k = 0; k < LEFT_CUTOFF; k++){
 			SetPixelColor(&Left_PixelData[k], TAIL_LIGHT);
 		 }
-		for(int l = RIGHT_CUTOFF; l < RIGHT_NUMPIXEL; l++){
+		for(int l = 0; l < RIGHT_CUTOFF; l++){
 			SetPixelColor(&Right_PixelData[l], TAIL_LIGHT);
 		 }
 
@@ -213,8 +238,12 @@ void updateLight(){
 		left_dma_Buffer[LEFT_DMABUF_LEN - z] = 0;
 		right_dma_Buffer[RIGHT_DMABUF_LEN - z ] = 0; // Extra time for latch (50us?)
 	}
-	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)left_dma_Buffer, LEFT_DMABUF_LEN);
+	uint32_t PRIMASK_STATE =  __get_PRIMASK();// Store the Current State of the Interrupts in (PRIMASK)
+//	// Note: CPSID i sets PRIMASK to 1 (disable) and CPSIE i clears PRIMASK to 0 (enables)
+	__disable_irq(); // This is an Critical Section because we want to Ensure both DMA Start without interrupts in between
 	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)right_dma_Buffer, RIGHT_DMABUF_LEN);
+	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)left_dma_Buffer, LEFT_DMABUF_LEN);
+	__set_PRIMASK(PRIMASK_STATE);
 }
 // blinkData is Headlight, Hazard, Left, Right
 void updateDash(){
@@ -232,9 +261,12 @@ void updateDash(){
 
 	}
 	else if((~blinkData & 0b0001) && (blinkData & 0b0010)){ // If Right is off and Left is On, ensure right blink is off
-		for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
-		  SetPixelColor(&Right_PixelData[i], OFF_COLOR);
-	    }
+//		for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
+//		  SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+//	    }
+		for(int i = RIGHT_CUTOFF; i < RIGHT_NUMPIXEL; i++){
+			SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+		}
 		RIGHT_BLINK = 0;
 		RIGHT_BLINK_FLAG = 0;
 		LEFT_BLINK = 1;
@@ -254,10 +286,13 @@ void updateDash(){
 		return;
 	}
 	else{ // Toggled all Off
-		// No Blinking
-		for(int i = 0; i < (RIGHT_NUMPIXEL - RIGHT_CUTOFF); i++){
-			SetPixelColor(&Right_PixelData[i], OFF_COLOR);
-		}
+//		 No Blinking
+//		for(int i = 0; i < (RIGHT_NUMPIXEL - RIGHT_CUTOFF); i++){
+//			SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+//		}
+		for(int i = RIGHT_CUTOFF; i < RIGHT_NUMPIXEL; i++){
+				SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+			}
 		for(int j = LEFT_CUTOFF; j < LEFT_NUMPIXEL; j++){
 			SetPixelColor(&Left_PixelData[j], OFF_COLOR);
 		}
@@ -309,6 +344,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
   // Prepares the CAN hardware with the existing configuration and start allowing
   // CAN message Transmitting and Receiving
+//  HAL_GPIO_WritePin(LVL_SHIFT_EN_GPIO_Port, LVL_SHIFT_EN_Pin, GPIO_PIN_RESET);
+
+  HAL_GPIO_WritePin(LVL_SHIFT_EN_GPIO_Port, LVL_SHIFT_EN_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(MUX_SEL_GPIO_Port, MUX_SEL_Pin, GPIO_PIN_RESET); // 0 Select LED_A_5V to LED_A_OUTPUT rather than LED_B_5V
   datasentFlag = 2;
   updateDashFlag = 0;
   updatePedalFlag = 0 ;
@@ -318,10 +357,12 @@ int main(void)
   RIGHT_BLINK = 0;
   RIGHT_BLINK_FLAG = 1;
 
-  updateBrake(0b0); // Dim RED
   //HAL_Delay(100);
-  updateDash(0b0000); // OFF
-
+  brakeData = 0b0;
+  blinkData = 0b0000;
+  HAL_Delay(100);
+  updateDash(); // OFF
+  updateBrake(); // Dim RED
 
   HAL_CAN_Start(&hcan);
   // Triggers Interrupt whenever FIFO0 receive a new message
@@ -330,11 +371,27 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+#ifdef TESTING
+  blinkData = 0b0100; // hazard
+//  blinkData = 0b0010; // left only
+//  blinkData = 0b0001; // right only
+//  	blinkData = 0b1000;
+//  brakeData = 0b1;
+//  brakeData = 0b0;
+  updateDash(); // hazard
+  updateBrake();
+
+
+#endif
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+//	  updateBrake();
+
+	  HAL_GPIO_WritePin(LVL_SHIFT_EN_GPIO_Port, LVL_SHIFT_EN_Pin, GPIO_PIN_SET);
+	  HAL_GPIO_WritePin(MUX_SEL_GPIO_Port, MUX_SEL_Pin, GPIO_PIN_RESET); // 0 Select LED_A_5V to LED_A_OUTPUT rather than LED_B_5V
 	  if(counter + 800 <= HAL_GetTick()){
 		  if(LEFT_BLINK){
 			  if(LEFT_BLINK_FLAG){
@@ -352,13 +409,19 @@ int main(void)
 		  }
 		  if(RIGHT_BLINK){
 			  if(RIGHT_BLINK_FLAG){
-				  for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
+//				  for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
+//					  SetPixelColor(&Right_PixelData[i], TURNSIG_COLOR);
+//				  }
+				  for(int i = RIGHT_CUTOFF; i < RIGHT_NUMPIXEL; i++){
 					  SetPixelColor(&Right_PixelData[i], TURNSIG_COLOR);
 				  }
 				  RIGHT_BLINK_FLAG = 0 ;
 			  }
 			  else if(RIGHT_BLINK_FLAG == 0){
-				  for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
+//				  for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
+//					  SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+//				  }
+				  for(int i = RIGHT_CUTOFF; i < RIGHT_NUMPIXEL; i++){
 					  SetPixelColor(&Right_PixelData[i], OFF_COLOR);
 				  }
 				  RIGHT_BLINK_FLAG = 1;
@@ -368,16 +431,20 @@ int main(void)
 		  updateLight();
 	  }
 	  // Interrupt won't be faster than CPU execution since processing speed is way faster
-	  if(updateDashFlag && datasentFlag == 2){
+	  if(updateDashFlag && datasentFlag == 0b0011){
 
 		  updateDash();
 		  updateDashFlag = 0 ; // 0 means the latest dash data has been processed
 
 	  }
-	  if(updatePedalFlag && datasentFlag == 2){
+	  if(updatePedalFlag && datasentFlag == 0b0011){
 		  updateBrake();
 		  updatePedalFlag = 0; // 0 means the latest pedal data has been processed
 	  }
+#ifdef TESTING
+//	  blinkData = 0b1000;
+//	  updateDash();
+#endif
   }
   /* USER CODE END 3 */
 }
@@ -495,7 +562,7 @@ static void MX_TIM3_Init(void)
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 57;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
@@ -561,14 +628,24 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_CAN_GPIO_Port, LED_CAN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(MUX_SEL_GPIO_Port, MUX_SEL_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : LED_CAN_Pin */
-  GPIO_InitStruct.Pin = LED_CAN_Pin;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, LED_CAN_Pin|LVL_SHIFT_EN_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : MUX_SEL_Pin */
+  GPIO_InitStruct.Pin = MUX_SEL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LED_CAN_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(MUX_SEL_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LED_CAN_Pin LVL_SHIFT_EN_Pin */
+  GPIO_InitStruct.Pin = LED_CAN_Pin|LVL_SHIFT_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

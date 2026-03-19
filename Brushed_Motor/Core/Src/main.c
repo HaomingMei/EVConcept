@@ -57,7 +57,7 @@ TIM_HandleTypeDef htim16;
 /* USER CODE BEGIN PV */
 uint8_t RxMessage[8];
 volatile uint8_t speed = 0; // No optimization
-CAN_RxHeaderTypeDef RxHeader;
+CAN_caTypeDef RxHeader;
 uint8_t updateFlag;
 uint32_t tick;
 uint8_t REST_DRIVE_COUNT;
@@ -92,13 +92,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *can){
 	if(HAL_CAN_GetRxMessage(can,CAN_FILTER_FIFO0, &RxHeader, RxMessage ) == HAL_OK){
 
 		HAL_GPIO_TogglePin(DBGLED1_GPIO_Port, DBGLED1_Pin);
-		if(RxHeader.StdId == ACC_ID){
+//		if(RxHeader.StdId == ACC_ID){
 			speed = (uint8_t)RxMessage[0];
 
-		}
+//		}
 	}
-
-
 }
 void update_car_state(){
 	switch(current_state){
