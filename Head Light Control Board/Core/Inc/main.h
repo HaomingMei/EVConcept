@@ -59,10 +59,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define RIGHT_HEADLIGHT_Pin GPIO_PIN_2
-#define RIGHT_HEADLIGHT_GPIO_Port GPIOA
 #define LEFT_HEADLIGHT_Pin GPIO_PIN_6
 #define LEFT_HEADLIGHT_GPIO_Port GPIOA
+#define MUX_SEL_Pin GPIO_PIN_7
+#define MUX_SEL_GPIO_Port GPIOA
+#define LVL_SHIFT_EN_Pin GPIO_PIN_5
+#define LVL_SHIFT_EN_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
