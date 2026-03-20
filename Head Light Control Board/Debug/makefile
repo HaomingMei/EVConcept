@@ -34,34 +34,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := Head Light Control Board
+BUILD_ARTIFACT_NAME := Head_Light_Control_Board_Personal
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-Head\ Light\ Control\ Board.elf \
+Head_Light_Control_Board_Personal.elf \
 
 MAP_FILES += \
-Head\ Light\ Control\ Board.map \
+Head_Light_Control_Board_Personal.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-Head\ Light\ Control\ Board.list \
+Head_Light_Control_Board_Personal.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: Head\ Light\ Control\ Board.elf secondary-outputs
+main-build: Head_Light_Control_Board_Personal.elf secondary-outputs
 
 # Tool invocations
-Head\ Light\ Control\ Board.elf Head\ Light\ Control\ Board.map: $(OBJS) $(USER_OBJS) /Users/haoming/Documents/EVConcept/Head\ Light\ Control\ Board/STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Head Light Control Board.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/Users/haoming/Documents/EVConcept/Head Light Control Board/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Head Light Control Board.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Head_Light_Control_Board_Personal.elf Head_Light_Control_Board_Personal.map: $(OBJS) $(USER_OBJS) /Users/haoming/Documents/Personal_EVConcept/Head\ Light\ Control\ Board/STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Head_Light_Control_Board_Personal.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/Users/haoming/Documents/Personal_EVConcept/Head Light Control Board/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Head_Light_Control_Board_Personal.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -70,14 +70,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-Head\ Light\ Control\ Board.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "Head Light Control Board.list"
+Head_Light_Control_Board_Personal.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "Head_Light_Control_Board_Personal.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) Head\ Light\ Control\ Board.elf Head\ Light\ Control\ Board.list Head\ Light\ Control\ Board.map Head\\ Light\\ Control\\ Board.elf default.size.stdout
+	-$(RM) Head_Light_Control_Board_Personal.elf Head_Light_Control_Board_Personal.list Head_Light_Control_Board_Personal.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

@@ -21,16 +21,40 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <limits.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+// WS2812B (LED) Expects GRB
+typedef union{
+	struct{
+		uint8_t b;
+		uint8_t r;
+		uint8_t g;
+	}color;
+	uint32_t data; // BRG and "data" share the same memory space. This allows us to access the pixel data with ease
+}PixelRGB_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+//#define TESTING
+
+#define NUM_PIXEL 76
+#define CUT_OFF 44
+
+#define DMABUF_LEN (NUM_PIXEL * 24) + 100
+#define DASHLIGHT_ID 5
+
+#define NEOPIXEL_ZERO 19
+#define NEOPIXEL_ONE 38
+
+const uint8_t OFF_COLOR[] = {0,0,0};
+const uint8_t HEADLIGHT_COLOR[] = {255,255,255};
+const uint8_t TURNSIG_COLOR[] = {255,20,0};
+
+
 
 /* USER CODE END PD */
 
@@ -47,6 +71,8 @@ DMA_HandleTypeDef hdma_tim3_ch1_trig;
 DMA_HandleTypeDef hdma_tim3_ch3;
 
 /* USER CODE BEGIN PV */
+CAN_RxHeaderTypeDef RxHeader; // Struct Used to Store CAN Message Received
+uint8_t RxData[8];
 
 /* USER CODE END PV */
 
@@ -57,12 +83,80 @@ static void MX_DMA_Init(void);
 static void MX_CAN_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
-
+void updateLight();
+void updateDash(uint8_t blinkData_local); // Ensures when we return to function, we finish updating using the old value
+void SetPixelColor(PixelRGB_t* p,const uint8_t color[]);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+uint8_t datasentFlag; // datasentFlag = 2 means both DMA are available, 0 means none are available
+uint8_t updateDashFlag;
+PixelRGB_t Left_PixelData[NUM_PIXEL] = {0};
+uint32_t left_dma_buffer[DMABUF_LEN] = {0};
 
+PixelRGB_t Right_PixelData[NUM_PIXEL] = {0};
+uint32_t right_dma_buffer[DMABUF_LEN] = {0};
+
+uint8_t blinkData;
+uint32_t* pBuff; // Used to point to the dma_buffer to ease increment in size of words
+uint8_t LEFT_BLINK;
+uint8_t LEFT_BLINK_FLAG;
+uint8_t RIGHT_BLINK;
+uint8_t RIGHT_BLINK_FLAG;
+
+int counter;
+
+void SetPixelColor(PixelRGB_t* p, const uint8_t color[]){
+	(*p).color.r = color [0];
+	(*p).color.g = color [1];
+	(*p).color.b = color [2];
+}
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
+	// Extract the LED status update bits
+	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
+	if(datasentFlag & 0b00000011){
+		if(RxHeader.StdId == DASHLIGHT_ID){
+			// Dashboard Controls the HeadLights, and Blinking for the Headlights
+			blinkData = RxData[0];
+			updateDashFlag = 1;
+		}
+	}
+}
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
+
+  if( htim == &htim3){ // Check if address pointed to is the same as the address of htim3
+	  // Note that TIM_Channel 3 corresponds to hdma[3], it's not zero-indexed (DMA)
+	  // TIM channel are zero-indexed as stated in TIM_DMADelayPulseCplt 	   (TIM Status)
+	  if(htim->hdma[1]->State ==  HAL_DMA_STATE_READY || htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+		  datasentFlag |= 0b00000001;
+	  }
+	  if(htim->hdma[3]->State == HAL_DMA_STATE_READY || htim->ChannelState[2] == HAL_TIM_CHANNEL_STATE_READY){
+
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
+		  datasentFlag |= 0b00000010;
+
+	  }
+#ifdef TESTING
+			uint32_t left_remaining;
+			uint32_t right_remaining;
+		  left_remaining = htim->hdma[1]->Instance->CNDTR;
+		  right_remaining = htim->hdma[3]->Instance->CNDTR;
+#endif
+
+  }
+}
+void LightsInit(){ // Default LED Configuration
+	datasentFlag = 0;
+	for(int k = 0; k < NUM_PIXEL; k++){
+		SetPixelColor(&Left_PixelData[k], OFF_COLOR);
+		SetPixelColor(&Right_PixelData[k], OFF_COLOR);
+	 }
+
+	updateLight();
+}
 /* USER CODE END 0 */
 
 /**
@@ -108,6 +202,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  HAL_GPIO_WritePin(LVL_SHIFT_EN_GPIO_Port, LVL_SHIFT_EN_Pin, GPIO_PIN_SET); // Enable PWM Conversion Step Up from 3.3V to 5V
+	  HAL_GPIO_WritePin(MUX_SEL_GPIO_Port, MUX_SEL_Pin, GPIO_PIN_RESET); // 0 Select LED_A_5V to LED_A_OUTPUT rather than LED_B_5V
+
   }
   /* USER CODE END 3 */
 }
