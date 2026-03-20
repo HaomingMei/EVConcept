@@ -96,8 +96,8 @@ static void MX_CAN_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 void updateLight();
-void updateDash();
-void updateBrake();
+void updateDash(uint8_t blinkData_local); // Ensures when we return to function, we finish updating using the old value
+void updateBrake(uint8_t brakeData_local);
 void SetPixelColor(PixelRGB_t* p,const uint8_t color[]);
 
 /* USER CODE END PFP */
@@ -155,12 +155,12 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 	  // Note that TIM_Channel 3 corresponds to hdma[3], it's not zero-indexed (DMA)
 	  // TIM channel are zero-indexed as stated in TIM_DMADelayPulseCplt 	   (TIM Status)
 	  if(htim->hdma[1]->State ==  HAL_DMA_STATE_READY || htim->ChannelState[0] == HAL_TIM_CHANNEL_STATE_READY){
-//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
 		  datasentFlag |= 0b00000001;
 	  }
 	  if(htim->hdma[3]->State == HAL_DMA_STATE_READY || htim->ChannelState[2] == HAL_TIM_CHANNEL_STATE_READY){
 
-//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
+		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
 		  datasentFlag |= 0b00000010;
 
 	  }
@@ -168,12 +168,12 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 #endif
 		  left_remaining = htim->hdma[1]->Instance->CNDTR;
 		  right_remaining = htim->hdma[3]->Instance->CNDTR;
-
-	  if(datasentFlag == 0b0011){
-		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
-		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
-
-	  }
+//
+//	  if(datasentFlag == 0b0011){
+//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_3);
+//		  HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+//
+//	  }
 
 //	  if (htim == &htim3)
 //	     {
@@ -183,9 +183,9 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 //	     }
   }
 }
-void updateBrake(){
+void updateBrake(uint8_t brakeData_local){
 	datasentFlag = 0;
-	if(brakeData & 0b1)
+	if(brakeData_local & 0b1)
 	{
 		for(int i = 0; i < LEFT_CUTOFF; i++){
 			SetPixelColor(&Left_PixelData[i], BRAKE_LIGHT);
@@ -261,10 +261,11 @@ void updateLight(){
 	__enable_irq();
 }
 // blinkData is Headlight, Hazard, Left, Right
-void updateDash(){
+void updateDash(uint8_t blinkData_local){
 	// TODO Logic to Mask the Blinkdata and Modify Left and Right Pixel Data as Necessary
 	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
-	if ((~blinkData & 0b0010) && (blinkData&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
+	blinkData_local &= 0b00000111;
+	if ((~blinkData_local & 0b0010) && (blinkData_local&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
 		for(int i = LEFT_CUTOFF; i < LEFT_NUMPIXEL; i++){
 			SetPixelColor(&Left_PixelData[i], OFF_COLOR);
 		}
@@ -275,7 +276,7 @@ void updateDash(){
 		counter =  0;
 
 	}
-	else if((~blinkData & 0b0001) && (blinkData & 0b0010)){ // If Right is off and Left is On, ensure right blink is off
+	else if((~blinkData_local & 0b0001) && (blinkData_local & 0b0010)){ // If Right is off and Left is On, ensure right blink is off
 //		for(int i = 0; i < RIGHT_NUMPIXEL-RIGHT_CUTOFF; i++){
 //		  SetPixelColor(&Right_PixelData[i], OFF_COLOR);
 //	    }
@@ -288,7 +289,7 @@ void updateDash(){
 		LEFT_BLINK_FLAG = 1;
 		counter = 0;
 	}
-	else if(blinkData & 0b0100){ // Hazard Case
+	else if(blinkData_local & 0b0100){ // Hazard Case
 
 		LEFT_BLINK = 1;
 		LEFT_BLINK_FLAG = 1;
@@ -297,7 +298,13 @@ void updateDash(){
 		counter = 0;
 
 	}
-	else if(blinkData & 0b1000){ // don't care about headlights
+	else if(blinkData_local & 0b1000){ // don't care about headlights
+		// Edge Case: Pressing Headlight before left/right/hazard zeros the datasentFlag, and if one of more of previous DMA transfer finished
+		// It won't ever become 0b0011, which blocks CAN (bad).
+		// Here we check that if the previous transfers are finished, we set both available, else let it be 0
+		if(htim3.hdma[1]->State ==  HAL_DMA_STATE_READY && htim3.hdma[3]->State ==  HAL_DMA_STATE_READY){
+			datasentFlag = 0b0011;
+		}
 		return;
 	}
 	else{ // Toggled all Off
@@ -450,12 +457,13 @@ int main(void)
 	  // Interrupt won't be faster than CPU execution since processing speed is way faster
 	  if(updateDashFlag && datasentFlag == 0b0011){
 
-		  updateDash();
+		  updateDash(blinkData);
+
 		  updateDashFlag = 0 ; // 0 means the latest dash data has been processed
 
 	  }
 	  if(updatePedalFlag && datasentFlag == 0b0011){
-		  updateBrake();
+		  updateBrake(brakeData);
 		  updatePedalFlag = 0; // 0 means the latest pedal data has been processed
 	  }
 #ifdef TESTING
