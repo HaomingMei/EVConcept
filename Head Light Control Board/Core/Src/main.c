@@ -99,6 +99,7 @@ PixelRGB_t Right_PixelData[NUM_PIXEL] = {0};
 uint32_t right_dma_Buffer[DMABUF_LEN] = {0};
 
 uint8_t blinkData;
+uint8_t prev_blinkData;
 uint32_t* pBuff_Left; // Used to point to the dma_buffer to ease increment in size of words
 uint32_t* pBuff_Right;
 uint8_t LEFT_BLINK;
@@ -120,7 +121,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 	if(datasentFlag & 0b00000011){
 		if(RxHeader.StdId == DASHLIGHT_ID){
 			// Dashboard Controls the HeadLights, and Blinking for the Headlights
-			blinkData = RxData[0];
+			blinkData = RxData[0] & 0b00001011; // Mask out Hazard
 			updateDashFlag = 1;
 		}
 	}
@@ -195,9 +196,12 @@ void updateLight(){
 }
 
 void updateDash(uint8_t blinkData_local){
+	if (blinkData_local == prev_blinkData) { // Case where toggle hazard, it will just return
+		return;
+	}
 	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
 	// Blink + Left/Right can be On Concurrently
-	blinkData_local &= 0b00001011; // Hazard don't matter for headlights
+
 	if(blinkData_local & 0b1000){
 		for(int i = 0; i < CUT_OFF; i++){
 			SetPixelColor(&Left_PixelData[i], HEADLIGHT_COLOR);
@@ -232,15 +236,6 @@ void updateDash(uint8_t blinkData_local){
 		LEFT_BLINK_FLAG = 1;
 		counter = 0;
 	}
-//	else if(blinkData_local & 0b0100){ // Hazard Case
-//
-//		LEFT_BLINK = 1;
-//		LEFT_BLINK_FLAG = 1;
-//		RIGHT_BLINK = 1;
-//		RIGHT_BLINK_FLAG = 1;
-//		counter = 0;
-//
-//	}
 
 	else{ // Toggled all Off
 //		 No Blinking
@@ -257,7 +252,7 @@ void updateDash(uint8_t blinkData_local){
 		counter =  INT_MAX - 800;
 
 	}
-
+	prev_blinkData = blinkData_local;
 	updateLight();
 }
 /* USER CODE END 0 */
@@ -295,7 +290,24 @@ int main(void)
   MX_CAN_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+   HAL_GPIO_WritePin(LVL_SHIFT_EN_GPIO_Port, LVL_SHIFT_EN_Pin, GPIO_PIN_SET);
+   HAL_GPIO_WritePin(MUX_SEL_GPIO_Port, MUX_SEL_Pin, GPIO_PIN_RESET); // 0 Select LED_A_5V to LED_A_OUTPUT rather than LED_B_5V
+   datasentFlag = 0b00000011;
+   updateDashFlag = 0;
 
+   LEFT_BLINK = 0;
+   LEFT_BLINK_FLAG = 1;
+   RIGHT_BLINK = 0;
+   RIGHT_BLINK_FLAG = 1;
+
+
+   blinkData = 0b0000;
+   prev_blinkData = 0b0000;
+   LightsInit();
+
+   HAL_CAN_Start(&hcan);
+   // Triggers Interrupt whenever FIFO0 receive a new message
+   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -307,6 +319,47 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  HAL_GPIO_WritePin(LVL_SHIFT_EN_GPIO_Port, LVL_SHIFT_EN_Pin, GPIO_PIN_SET); // Enable PWM Conversion Step Up from 3.3V to 5V
 	  HAL_GPIO_WritePin(MUX_SEL_GPIO_Port, MUX_SEL_Pin, GPIO_PIN_RESET); // 0 Select LED_A_5V to LED_A_OUTPUT rather than LED_B_5V
+	  if(counter + 800 <= HAL_GetTick()){
+		  if(LEFT_BLINK){
+			  if(LEFT_BLINK_FLAG){
+				  for(int i = CUT_OFF; i < NUM_PIXEL; i++){
+					  SetPixelColor(&Left_PixelData[i], TURNSIG_COLOR);
+				  }
+				  LEFT_BLINK_FLAG = 0;
+			  }
+			  else if(LEFT_BLINK_FLAG == 0){
+				  for(int i = CUT_OFF; i < NUM_PIXEL; i++){
+					  SetPixelColor(&Left_PixelData[i], OFF_COLOR);
+				  }
+				  LEFT_BLINK_FLAG = 1;
+			  }
+		  }
+		  if(RIGHT_BLINK){
+			  if(RIGHT_BLINK_FLAG){
+				  for(int i = CUT_OFF; i < NUM_PIXEL; i++){
+					  SetPixelColor(&Right_PixelData[i], TURNSIG_COLOR);
+				  }
+				  RIGHT_BLINK_FLAG = 0 ;
+			  }
+			  else if(RIGHT_BLINK_FLAG == 0){
+
+				  for(int i = CUT_OFF; i < NUM_PIXEL; i++){
+					  SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+				  }
+				  RIGHT_BLINK_FLAG = 1;
+			  }
+		  }
+		  counter = HAL_GetTick();
+		  updateLight();
+	  }
+
+	  // Interrupt won't be faster than CPU execution since processing speed is way faster
+	  if(updateDashFlag && datasentFlag == 0b0011){
+		  updateDash(blinkData);
+		  updateDashFlag = 0 ; // 0 means the latest dash data has been processed
+
+	  }
+
 
   }
   /* USER CODE END 3 */
@@ -382,7 +435,22 @@ static void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
-
+  CAN_FilterTypeDef canfilterconfig;
+  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+  canfilterconfig.FilterBank = 0;
+  canfilterconfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+  canfilterconfig.FilterIdHigh = DASHLIGHT_ID << 5; // CAN frame ID is 11 bit, but it's fetched as a 16 bit
+  	  	  	  	  	  	  	  	  	  	  	  	  	// Actual CAN id is the fetched one right shifted by 5
+  	  	  	  	  	  	  	  	  	  	  	  	  	// However, to accept it, we might create a filter that
+  	  	  	  	  	  	  	  	  	  	  	  	  	// Matches the ID and shifts it left by 5 bits
+  canfilterconfig.FilterIdLow = 0xFFFF;
+  canfilterconfig.FilterMaskIdHigh = 0xFFFF;
+  canfilterconfig.FilterMaskIdLow = 0xFFFF;
+  canfilterconfig.FilterMode = CAN_FILTERMODE_IDLIST;
+  canfilterconfig.FilterScale = CAN_FILTERSCALE_16BIT;
+  canfilterconfig.SlaveStartFilterBank = 0;
+  // Sets up the Filter Hardware
+  HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
   /* USER CODE END CAN_Init 2 */
 
 }

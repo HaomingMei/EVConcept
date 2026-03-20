@@ -514,7 +514,7 @@ void updateDash(uint8_t blinkData_local){
  80003fc:	b410      	push	{r4}
 	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
  80003fe:	701a      	strb	r2, [r3, #0]
-	blinkData_local &= 0b00000111;
+	blinkData_local &= 0b00000111; // Logic breaks if headlight is on and we proceed to press any of left/right/hazard (it hits else)
 	if ((~blinkData_local & 0b0010) && (blinkData_local&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
  8000400:	f000 0303 	and.w	r3, r0, #3
  8000404:	2b01      	cmp	r3, #1
