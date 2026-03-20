@@ -264,7 +264,7 @@ void updateLight(){
 void updateDash(uint8_t blinkData_local){
 	// TODO Logic to Mask the Blinkdata and Modify Left and Right Pixel Data as Necessary
 	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
-	blinkData_local &= 0b00000111;
+	blinkData_local &= 0b00000111; // Logic breaks if headlight is on and we proceed to press any of left/right/hazard (it hits else)
 	if ((~blinkData_local & 0b0010) && (blinkData_local&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
 		for(int i = LEFT_CUTOFF; i < LEFT_NUMPIXEL; i++){
 			SetPixelColor(&Left_PixelData[i], OFF_COLOR);
