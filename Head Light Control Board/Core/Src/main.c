@@ -93,13 +93,14 @@ void SetPixelColor(PixelRGB_t* p,const uint8_t color[]);
 uint8_t datasentFlag; // datasentFlag = 2 means both DMA are available, 0 means none are available
 uint8_t updateDashFlag;
 PixelRGB_t Left_PixelData[NUM_PIXEL] = {0};
-uint32_t left_dma_buffer[DMABUF_LEN] = {0};
+uint32_t left_dma_Buffer[DMABUF_LEN] = {0};
 
 PixelRGB_t Right_PixelData[NUM_PIXEL] = {0};
-uint32_t right_dma_buffer[DMABUF_LEN] = {0};
+uint32_t right_dma_Buffer[DMABUF_LEN] = {0};
 
 uint8_t blinkData;
-uint32_t* pBuff; // Used to point to the dma_buffer to ease increment in size of words
+uint32_t* pBuff_Left; // Used to point to the dma_buffer to ease increment in size of words
+uint32_t* pBuff_Right;
 uint8_t LEFT_BLINK;
 uint8_t LEFT_BLINK_FLAG;
 uint8_t RIGHT_BLINK;
@@ -153,7 +154,109 @@ void LightsInit(){ // Default LED Configuration
 	for(int k = 0; k < NUM_PIXEL; k++){
 		SetPixelColor(&Left_PixelData[k], OFF_COLOR);
 		SetPixelColor(&Right_PixelData[k], OFF_COLOR);
-	 }
+	}
+	updateLight();
+}
+
+void updateLight(){
+	datasentFlag = 0;
+	pBuff_Left = left_dma_Buffer;
+	pBuff_Right = right_dma_Buffer;
+	for(int i = 0; i< NUM_PIXEL; i++){
+		for(int j = 23; j >= 0; j--){
+			if((Left_PixelData[i].data>>j) & 0x01){
+				*pBuff_Left = NEOPIXEL_ONE;
+			}
+			else{
+				*pBuff_Left = NEOPIXEL_ZERO;
+			}
+			pBuff_Left++;
+
+			if((Right_PixelData[i].data>>j) & 0x01){
+				*pBuff_Right = NEOPIXEL_ONE;
+			}
+			else{
+				*pBuff_Right = NEOPIXEL_ZERO;
+			}
+			pBuff_Right++;
+		}
+
+	}
+	for(int z = 1; z <= 100; z++){
+		left_dma_Buffer[DMABUF_LEN - z] = 0;
+		right_dma_Buffer[DMABUF_LEN - z ] = 0; // Extra time for latch (50us?)
+	}
+	uint32_t PRIMASK_STATE =  __get_PRIMASK();// Store the Current State of the Interrupts in (PRIMASK)
+//	// Note: CPSID i sets PRIMASK to 1 (disable) and CPSIE i clears PRIMASK to 0 (enables)
+	__disable_irq(); // This is an Critical Section because we want to Ensure both DMA Start without interrupts in between
+	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)right_dma_Buffer, DMABUF_LEN);
+	HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)left_dma_Buffer, DMABUF_LEN);
+	__set_PRIMASK(PRIMASK_STATE);
+}
+
+void updateDash(uint8_t blinkData_local){
+	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
+	// Blink + Left/Right can be On Concurrently
+	blinkData_local &= 0b00001011; // Hazard don't matter for headlights
+	if(blinkData_local & 0b1000){
+		for(int i = 0; i < CUT_OFF; i++){
+			SetPixelColor(&Left_PixelData[i], HEADLIGHT_COLOR);
+			SetPixelColor(&Right_PixelData[i], HEADLIGHT_COLOR);
+		}
+	}else{
+		for(int i = 0; i < CUT_OFF; i++){
+			SetPixelColor(&Left_PixelData[i], OFF_COLOR);
+			SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+		}
+	}
+
+	if ((~blinkData_local & 0b0010) && (blinkData_local&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
+		for(int i = CUT_OFF; i < NUM_PIXEL; i++){
+			SetPixelColor(&Left_PixelData[i], OFF_COLOR);
+		}
+		LEFT_BLINK = 0;
+		LEFT_BLINK_FLAG = 0;
+		RIGHT_BLINK = 1;
+		RIGHT_BLINK_FLAG = 1;
+		counter =  0;
+
+	}
+	else if((~blinkData_local & 0b0001) && (blinkData_local & 0b0010)){ // If Right is off and Left is On, ensure right blink is off
+
+		for(int i = CUT_OFF; i < NUM_PIXEL; i++){
+			SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+		}
+		RIGHT_BLINK = 0;
+		RIGHT_BLINK_FLAG = 0;
+		LEFT_BLINK = 1;
+		LEFT_BLINK_FLAG = 1;
+		counter = 0;
+	}
+//	else if(blinkData_local & 0b0100){ // Hazard Case
+//
+//		LEFT_BLINK = 1;
+//		LEFT_BLINK_FLAG = 1;
+//		RIGHT_BLINK = 1;
+//		RIGHT_BLINK_FLAG = 1;
+//		counter = 0;
+//
+//	}
+
+	else{ // Toggled all Off
+//		 No Blinking
+		for(int i = CUT_OFF; i < NUM_PIXEL; i++){
+				SetPixelColor(&Right_PixelData[i], OFF_COLOR);
+			}
+		for(int j = CUT_OFF; j < NUM_PIXEL; j++){
+			SetPixelColor(&Left_PixelData[j], OFF_COLOR);
+		}
+		LEFT_BLINK = 0;
+		LEFT_BLINK_FLAG = 1; // Reset it to default
+		RIGHT_BLINK = 0;
+		RIGHT_BLINK_FLAG = 1; // Reset it to default
+		counter =  INT_MAX - 800;
+
+	}
 
 	updateLight();
 }
