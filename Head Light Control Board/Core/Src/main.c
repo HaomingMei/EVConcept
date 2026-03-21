@@ -107,7 +107,7 @@ uint8_t LEFT_BLINK_FLAG;
 uint8_t RIGHT_BLINK;
 uint8_t RIGHT_BLINK_FLAG;
 
-int counter;
+int counter = INT_MAX - 800;
 
 void SetPixelColor(PixelRGB_t* p, const uint8_t color[]){
 	(*p).color.r = color [0];
@@ -181,7 +181,6 @@ void updateLight(){
 			}
 			pBuff_Right++;
 		}
-
 	}
 	for(int z = 1; z <= 100; z++){
 		left_dma_Buffer[DMABUF_LEN - z] = 0;
@@ -199,14 +198,16 @@ void updateDash(uint8_t blinkData_local){
 	if (blinkData_local == prev_blinkData) { // Case where toggle hazard, it will just return
 		return;
 	}
-	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
 	// Blink + Left/Right can be On Concurrently
+	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
 
 	if(blinkData_local & 0b1000){
 		for(int i = 0; i < CUT_OFF; i++){
 			SetPixelColor(&Left_PixelData[i], HEADLIGHT_COLOR);
 			SetPixelColor(&Right_PixelData[i], HEADLIGHT_COLOR);
 		}
+		//
+
 	}else{
 		for(int i = 0; i < CUT_OFF; i++){
 			SetPixelColor(&Left_PixelData[i], OFF_COLOR);
@@ -214,6 +215,9 @@ void updateDash(uint8_t blinkData_local){
 		}
 	}
 
+	if((blinkData_local ^ prev_blinkData) & 0b1000){
+
+	}
 	if ((~blinkData_local & 0b0010) && (blinkData_local&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
 		for(int i = CUT_OFF; i < NUM_PIXEL; i++){
 			SetPixelColor(&Left_PixelData[i], OFF_COLOR);
@@ -222,7 +226,7 @@ void updateDash(uint8_t blinkData_local){
 		LEFT_BLINK_FLAG = 0;
 		RIGHT_BLINK = 1;
 		RIGHT_BLINK_FLAG = 1;
-		counter =  0;
+			counter =  0;
 
 	}
 	else if((~blinkData_local & 0b0001) && (blinkData_local & 0b0010)){ // If Right is off and Left is On, ensure right blink is off

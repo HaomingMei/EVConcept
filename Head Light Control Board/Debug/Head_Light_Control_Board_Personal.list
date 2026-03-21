@@ -9,43 +9,43 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
   2 .rodata       00000030  080039c8  080039c8  000049c8  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  3 .ARM.extab    00000000  080039f8  080039f8  0000500c  2**0
+  3 .ARM.extab    00000000  080039f8  080039f8  00005010  2**0
                   CONTENTS, READONLY
-  4 .ARM          00000000  080039f8  080039f8  0000500c  2**0
+  4 .ARM          00000000  080039f8  080039f8  00005010  2**0
                   CONTENTS, READONLY
-  5 .preinit_array 00000000  080039f8  080039f8  0000500c  2**0
+  5 .preinit_array 00000000  080039f8  080039f8  00005010  2**0
                   CONTENTS, ALLOC, LOAD, DATA
   6 .init_array   00000004  080039f8  080039f8  000049f8  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
   7 .fini_array   00000004  080039fc  080039fc  000049fc  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  8 .data         0000000c  20000000  08003a00  00005000  2**2
+  8 .data         00000010  20000000  08003a00  00005000  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  9 .bss          00003fd4  2000000c  08003a0c  0000500c  2**2
+  9 .bss          00003fd0  20000010  08003a10  00005010  2**2
                   ALLOC
- 10 ._user_heap_stack 00000600  20003fe0  08003a0c  00005fe0  2**0
+ 10 ._user_heap_stack 00000600  20003fe0  08003a10  00005fe0  2**0
                   ALLOC
- 11 .ARM.attributes 00000029  00000000  00000000  0000500c  2**0
+ 11 .ARM.attributes 00000029  00000000  00000000  00005010  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000a3ea  00000000  00000000  00005035  2**0
+ 12 .debug_info   0000a3ea  00000000  00000000  00005039  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 00001c78  00000000  00000000  0000f41f  2**0
+ 13 .debug_abbrev 00001c78  00000000  00000000  0000f423  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_aranges 00000b48  00000000  00000000  00011098  2**3
+ 14 .debug_aranges 00000b48  00000000  00000000  000110a0  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_rnglists 000008b8  00000000  00000000  00011be0  2**0
+ 15 .debug_rnglists 000008b8  00000000  00000000  00011be8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  00017422  00000000  00000000  00012498  2**0
+ 16 .debug_macro  00017422  00000000  00000000  000124a0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000ba34  00000000  00000000  000298ba  2**0
+ 17 .debug_line   0000ba36  00000000  00000000  000298c2  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    00088b82  00000000  00000000  000352ee  2**0
+ 18 .debug_str    00088b82  00000000  00000000  000352f8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  000bde70  2**0
+ 19 .comment      00000043  00000000  00000000  000bde7a  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00002f18  00000000  00000000  000bdeb4  2**2
+ 20 .debug_frame  00002f18  00000000  00000000  000bdec0  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 00000073  00000000  00000000  000c0dcc  2**0
+ 21 .debug_line_str 00000073  00000000  00000000  000c0dd8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -62,7 +62,7 @@ Disassembly of section .text:
  800011e:	2301      	movs	r3, #1
  8000120:	7023      	strb	r3, [r4, #0]
  8000122:	bd10      	pop	{r4, pc}
- 8000124:	2000000c 	.word	0x2000000c
+ 8000124:	20000010 	.word	0x20000010
  8000128:	00000000 	.word	0x00000000
  800012c:	080039b0 	.word	0x080039b0
 
@@ -75,14 +75,14 @@ Disassembly of section .text:
  800013a:	f3af 8000 	nop.w
  800013e:	bd08      	pop	{r3, pc}
  8000140:	00000000 	.word	0x00000000
- 8000144:	20000010 	.word	0x20000010
+ 8000144:	20000014 	.word	0x20000014
  8000148:	080039b0 	.word	0x080039b0
 
 0800014c <SetPixelColor>:
 uint8_t RIGHT_BLINK;
 uint8_t RIGHT_BLINK_FLAG;
 
-int counter;
+int counter = INT_MAX - 800;
 
 void SetPixelColor(PixelRGB_t* p, const uint8_t color[]){
  800014c:	b480      	push	{r7}
@@ -158,11 +158,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
  80001ba:	3708      	adds	r7, #8
  80001bc:	46bd      	mov	sp, r7
  80001be:	bd80      	pop	{r7, pc}
- 80001c0:	2000013c 	.word	0x2000013c
- 80001c4:	20000120 	.word	0x20000120
- 80001c8:	20000144 	.word	0x20000144
- 80001cc:	20003fc8 	.word	0x20003fc8
- 80001d0:	20000145 	.word	0x20000145
+ 80001c0:	20000140 	.word	0x20000140
+ 80001c4:	20000124 	.word	0x20000124
+ 80001c8:	20000148 	.word	0x20000148
+ 80001cc:	20003fcc 	.word	0x20003fcc
+ 80001d0:	20000149 	.word	0x20000149
 
 080001d4 <HAL_TIM_PWM_PulseFinishedCallback>:
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
@@ -236,8 +236,8 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
  8000246:	3708      	adds	r7, #8
  8000248:	46bd      	mov	sp, r7
  800024a:	bd80      	pop	{r7, pc}
- 800024c:	20000050 	.word	0x20000050
- 8000250:	20000144 	.word	0x20000144
+ 800024c:	20000054 	.word	0x20000054
+ 8000250:	20000148 	.word	0x20000148
 
 08000254 <LightsInit>:
 void LightsInit(){ // Default LED Configuration
@@ -284,10 +284,10 @@ void LightsInit(){ // Default LED Configuration
  800029a:	46bd      	mov	sp, r7
  800029c:	bd80      	pop	{r7, pc}
  800029e:	bf00      	nop
- 80002a0:	20000144 	.word	0x20000144
- 80002a4:	20000148 	.word	0x20000148
+ 80002a0:	20000148 	.word	0x20000148
+ 80002a4:	2000014c 	.word	0x2000014c
  80002a8:	080039c8 	.word	0x080039c8
- 80002ac:	20002088 	.word	0x20002088
+ 80002ac:	2000208c 	.word	0x2000208c
 
 080002b0 <updateLight>:
 
@@ -389,7 +389,6 @@ void updateLight(){
  800034c:	2b4b      	cmp	r3, #75	@ 0x4b
  800034e:	ddbe      	ble.n	80002ce <updateLight+0x1e>
 		}
-
 	}
 	for(int z = 1; z <= 100; z++){
  8000350:	2301      	movs	r3, #1
@@ -465,14 +464,14 @@ __STATIC_FORCEINLINE void __set_PRIMASK(uint32_t priMask)
  80003ba:	3718      	adds	r7, #24
  80003bc:	46bd      	mov	sp, r7
  80003be:	bd80      	pop	{r7, pc}
- 80003c0:	20000144 	.word	0x20000144
- 80003c4:	20003fcc 	.word	0x20003fcc
- 80003c8:	20000278 	.word	0x20000278
- 80003cc:	20003fd0 	.word	0x20003fd0
- 80003d0:	200021b8 	.word	0x200021b8
- 80003d4:	20000148 	.word	0x20000148
- 80003d8:	20002088 	.word	0x20002088
- 80003dc:	20000050 	.word	0x20000050
+ 80003c0:	20000148 	.word	0x20000148
+ 80003c4:	20003fd0 	.word	0x20003fd0
+ 80003c8:	2000027c 	.word	0x2000027c
+ 80003cc:	20003fd4 	.word	0x20003fd4
+ 80003d0:	200021bc 	.word	0x200021bc
+ 80003d4:	2000014c 	.word	0x2000014c
+ 80003d8:	2000208c 	.word	0x2000208c
+ 80003dc:	20000054 	.word	0x20000054
 
 080003e0 <updateDash>:
 
@@ -490,11 +489,11 @@ void updateDash(uint8_t blinkData_local){
  80003f2:	f000 80c8 	beq.w	8000586 <updateDash+0x1a6>
 		return;
 	}
+	// Blink + Left/Right can be On Concurrently
 	datasentFlag = 0; // Prevent BlinkData from being overwrite while executing
  80003f6:	4b67      	ldr	r3, [pc, #412]	@ (8000594 <updateDash+0x1b4>)
  80003f8:	2200      	movs	r2, #0
  80003fa:	701a      	strb	r2, [r3, #0]
-	// Blink + Left/Right can be On Concurrently
 
 	if(blinkData_local & 0b1000){
  80003fc:	79fb      	ldrb	r3, [r7, #7]
@@ -530,6 +529,8 @@ void updateDash(uint8_t blinkData_local){
  8000436:	dde9      	ble.n	800040c <updateDash+0x2c>
  8000438:	e018      	b.n	800046c <updateDash+0x8c>
 		}
+		//
+
 	}else{
 		for(int i = 0; i < CUT_OFF; i++){
  800043a:	2300      	movs	r3, #0
@@ -558,9 +559,11 @@ void updateDash(uint8_t blinkData_local){
  8000466:	69bb      	ldr	r3, [r7, #24]
  8000468:	2b2b      	cmp	r3, #43	@ 0x2b
  800046a:	dde9      	ble.n	8000440 <updateDash+0x60>
-		}
 	}
 
+	if((blinkData_local ^ prev_blinkData) & 0b1000){
+
+	}
 	if ((~blinkData_local & 0b0010) && (blinkData_local&0b0001)){ // If Left is off and Right Is on, ensure left blink is off
  800046c:	79fb      	ldrb	r3, [r7, #7]
  800046e:	f003 0302 	and.w	r3, r3, #2
@@ -606,7 +609,7 @@ void updateDash(uint8_t blinkData_local){
  80004b4:	4b3f      	ldr	r3, [pc, #252]	@ (80005b4 <updateDash+0x1d4>)
  80004b6:	2201      	movs	r2, #1
  80004b8:	701a      	strb	r2, [r3, #0]
-		counter =  0;
+			counter =  0;
  80004ba:	4b3f      	ldr	r3, [pc, #252]	@ (80005b8 <updateDash+0x1d8>)
  80004bc:	2200      	movs	r2, #0
  80004be:	601a      	str	r2, [r3, #0]
@@ -744,17 +747,17 @@ void updateDash(uint8_t blinkData_local){
  800058a:	46bd      	mov	sp, r7
  800058c:	bd80      	pop	{r7, pc}
  800058e:	bf00      	nop
- 8000590:	20003fc9 	.word	0x20003fc9
- 8000594:	20000144 	.word	0x20000144
- 8000598:	20000148 	.word	0x20000148
+ 8000590:	20003fcd 	.word	0x20003fcd
+ 8000594:	20000148 	.word	0x20000148
+ 8000598:	2000014c 	.word	0x2000014c
  800059c:	080039cc 	.word	0x080039cc
- 80005a0:	20002088 	.word	0x20002088
+ 80005a0:	2000208c 	.word	0x2000208c
  80005a4:	080039c8 	.word	0x080039c8
- 80005a8:	20003fd4 	.word	0x20003fd4
- 80005ac:	20003fd5 	.word	0x20003fd5
- 80005b0:	20003fd6 	.word	0x20003fd6
- 80005b4:	20003fd7 	.word	0x20003fd7
- 80005b8:	20003fd8 	.word	0x20003fd8
+ 80005a8:	20003fd8 	.word	0x20003fd8
+ 80005ac:	20003fd9 	.word	0x20003fd9
+ 80005b0:	20003fda 	.word	0x20003fda
+ 80005b4:	20003fdb 	.word	0x20003fdb
+ 80005b8:	20000000 	.word	0x20000000
  80005bc:	7ffffcdf 	.word	0x7ffffcdf
 
 080005c0 <main>:
@@ -1044,20 +1047,20 @@ int main(void)
  8000766:	bf00      	nop
  8000768:	40010c00 	.word	0x40010c00
  800076c:	40010800 	.word	0x40010800
- 8000770:	20000144 	.word	0x20000144
- 8000774:	20000145 	.word	0x20000145
- 8000778:	20003fd4 	.word	0x20003fd4
- 800077c:	20003fd5 	.word	0x20003fd5
- 8000780:	20003fd6 	.word	0x20003fd6
- 8000784:	20003fd7 	.word	0x20003fd7
- 8000788:	20003fc8 	.word	0x20003fc8
- 800078c:	20003fc9 	.word	0x20003fc9
- 8000790:	20000028 	.word	0x20000028
- 8000794:	20003fd8 	.word	0x20003fd8
- 8000798:	20000148 	.word	0x20000148
+ 8000770:	20000148 	.word	0x20000148
+ 8000774:	20000149 	.word	0x20000149
+ 8000778:	20003fd8 	.word	0x20003fd8
+ 800077c:	20003fd9 	.word	0x20003fd9
+ 8000780:	20003fda 	.word	0x20003fda
+ 8000784:	20003fdb 	.word	0x20003fdb
+ 8000788:	20003fcc 	.word	0x20003fcc
+ 800078c:	20003fcd 	.word	0x20003fcd
+ 8000790:	2000002c 	.word	0x2000002c
+ 8000794:	20000000 	.word	0x20000000
+ 8000798:	2000014c 	.word	0x2000014c
  800079c:	080039d0 	.word	0x080039d0
  80007a0:	080039c8 	.word	0x080039c8
- 80007a4:	20002088 	.word	0x20002088
+ 80007a4:	2000208c 	.word	0x2000208c
 
 080007a8 <SystemClock_Config>:
 /**
@@ -1277,7 +1280,7 @@ static void MX_CAN_Init(void)
  80008ca:	46bd      	mov	sp, r7
  80008cc:	bd80      	pop	{r7, pc}
  80008ce:	bf00      	nop
- 80008d0:	20000028 	.word	0x20000028
+ 80008d0:	2000002c 	.word	0x2000002c
  80008d4:	40006400 	.word	0x40006400
 
 080008d8 <MX_TIM3_Init>:
@@ -1417,7 +1420,7 @@ static void MX_TIM3_Init(void)
  8000992:	46bd      	mov	sp, r7
  8000994:	bd80      	pop	{r7, pc}
  8000996:	bf00      	nop
- 8000998:	20000050 	.word	0x20000050
+ 8000998:	20000054 	.word	0x20000054
  800099c:	40000400 	.word	0x40000400
 
 080009a0 <MX_DMA_Init>:
@@ -1938,9 +1941,9 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* htim_pwm)
  8000c8a:	bf00      	nop
  8000c8c:	40000400 	.word	0x40000400
  8000c90:	40021000 	.word	0x40021000
- 8000c94:	20000098 	.word	0x20000098
+ 8000c94:	2000009c 	.word	0x2000009c
  8000c98:	4002006c 	.word	0x4002006c
- 8000c9c:	200000dc 	.word	0x200000dc
+ 8000c9c:	200000e0 	.word	0x200000e0
  8000ca0:	4002001c 	.word	0x4002001c
 
 08000ca4 <HAL_TIM_MspPostInit>:
@@ -2223,7 +2226,7 @@ void DMA1_Channel2_IRQHandler(void)
  8000d9e:	bf00      	nop
  8000da0:	bd80      	pop	{r7, pc}
  8000da2:	bf00      	nop
- 8000da4:	200000dc 	.word	0x200000dc
+ 8000da4:	200000e0 	.word	0x200000e0
 
 08000da8 <DMA1_Channel6_IRQHandler>:
 
@@ -2247,7 +2250,7 @@ void DMA1_Channel6_IRQHandler(void)
  8000db2:	bf00      	nop
  8000db4:	bd80      	pop	{r7, pc}
  8000db6:	bf00      	nop
- 8000db8:	20000098 	.word	0x20000098
+ 8000db8:	2000009c 	.word	0x2000009c
 
 08000dbc <USB_LP_CAN1_RX0_IRQHandler>:
 
@@ -2271,7 +2274,7 @@ void USB_LP_CAN1_RX0_IRQHandler(void)
  8000dc6:	bf00      	nop
  8000dc8:	bd80      	pop	{r7, pc}
  8000dca:	bf00      	nop
- 8000dcc:	20000028 	.word	0x20000028
+ 8000dcc:	2000002c 	.word	0x2000002c
 
 08000dd0 <SystemInit>:
   * @note   This function should be used only after reset.
@@ -2371,11 +2374,11 @@ LoopFillZerobss:
   ldr r0, =_sdata
  8000e10:	20000000 	.word	0x20000000
   ldr r1, =_edata
- 8000e14:	2000000c 	.word	0x2000000c
+ 8000e14:	20000010 	.word	0x20000010
   ldr r2, =_sidata
  8000e18:	08003a00 	.word	0x08003a00
   ldr r2, =_sbss
- 8000e1c:	2000000c 	.word	0x2000000c
+ 8000e1c:	20000010 	.word	0x20000010
   ldr r4, =_ebss
  8000e20:	20003fe0 	.word	0x20003fe0
 
@@ -2497,9 +2500,9 @@ __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
  8000ea2:	3708      	adds	r7, #8
  8000ea4:	46bd      	mov	sp, r7
  8000ea6:	bd80      	pop	{r7, pc}
- 8000ea8:	20000000 	.word	0x20000000
- 8000eac:	20000008 	.word	0x20000008
- 8000eb0:	20000004 	.word	0x20000004
+ 8000ea8:	20000004 	.word	0x20000004
+ 8000eac:	2000000c 	.word	0x2000000c
+ 8000eb0:	20000008 	.word	0x20000008
 
 08000eb4 <HAL_IncTick>:
   * @note This function is declared as __weak to be overwritten in case of other
@@ -2524,7 +2527,7 @@ __weak void HAL_IncTick(void)
  8000eca:	46bd      	mov	sp, r7
  8000ecc:	bc80      	pop	{r7}
  8000ece:	4770      	bx	lr
- 8000ed0:	20000008 	.word	0x20000008
+ 8000ed0:	2000000c 	.word	0x2000000c
  8000ed4:	20003fdc 	.word	0x20003fdc
 
 08000ed8 <HAL_GetTick>:
@@ -7686,8 +7689,8 @@ if (((RCC_ClkInitStruct->ClockType) & RCC_CLOCKTYPE_PCLK1) == RCC_CLOCKTYPE_PCLK
  8002ab4:	40022000 	.word	0x40022000
  8002ab8:	40021000 	.word	0x40021000
  8002abc:	080039d4 	.word	0x080039d4
- 8002ac0:	20000000 	.word	0x20000000
- 8002ac4:	20000004 	.word	0x20000004
+ 8002ac0:	20000004 	.word	0x20000004
+ 8002ac4:	20000008 	.word	0x20000008
 
 08002ac8 <HAL_RCC_GetSysClockFreq>:
   *         right SYSCLK value. Otherwise, any configuration based on this function will be incorrect.
@@ -7862,7 +7865,7 @@ static void RCC_Delay(uint32_t mdelay)
  8002b9e:	46bd      	mov	sp, r7
  8002ba0:	bc80      	pop	{r7}
  8002ba2:	4770      	bx	lr
- 8002ba4:	20000000 	.word	0x20000000
+ 8002ba4:	20000004 	.word	0x20000004
  8002ba8:	10624dd3 	.word	0x10624dd3
 
 08002bac <HAL_TIM_PWM_Init>:
